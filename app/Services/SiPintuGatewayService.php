@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -27,7 +28,7 @@ class SiPintuGatewayService
         ]);
     }
 
-    public function exchangeCodeForToken(string $code): ?array
+    public function fetchUserFromGateway(string $code): ?array
     {
         $baseUrl = rtrim(config('services.sipintu.base_url', env('SIPINTU_BASE_URL', 'http://localhost:8000')), '/');
         $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
@@ -38,54 +39,42 @@ class SiPintuGatewayService
             return null;
         }
 
-        $response = Http::asForm()->post($baseUrl.'/oauth/token', [
-            'grant_type' => 'authorization_code',
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-            'code' => $code,
-            'redirect_uri' => $redirectUri,
-        ]);
+        $tokenResponse = Http::asForm()
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post($baseUrl.'/oauth/token', [
+                'grant_type' => 'authorization_code',
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect_uri' => $redirectUri,
+                'code' => $code,
+            ]);
 
-        if (! $response->successful()) {
+        if (! $tokenResponse->successful()) {
             return null;
         }
 
-        $data = $response->json();
-
-        if (! is_array($data) || empty($data['access_token'])) {
+        $accessToken = $tokenResponse->json('access_token');
+        if (empty($accessToken)) {
             return null;
         }
 
-        return $data;
-    }
+        $userResponse = Http::withToken($accessToken)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->get($baseUrl.'/api/v1/user/profile');
 
-    public function fetchUserProfile(string $accessToken): ?array
-    {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        if (! $userResponse->successful()) {
+            $userResponse = Http::withToken($accessToken)
+                ->withHeaders(['Accept' => 'application/json'])
+                ->get($baseUrl.'/api/v1/user');
+        }
 
-        if (empty($baseUrl)) {
+        if (! $userResponse->successful()) {
             return null;
         }
 
-        $response = Http::withToken($accessToken)
-            ->acceptJson()
-            ->get($baseUrl.'/api/v1/user');
+        $data = $userResponse->json();
 
-        if (! $response->successful()) {
-            return null;
-        }
-
-        $data = $response->json();
-
-        if (! is_array($data)) {
-            return null;
-        }
-
-        if (isset($data['user']) && is_array($data['user'])) {
-            return $data['user'];
-        }
-
-        if (isset($data['data']) && is_array($data['data'])) {
+        if (is_array($data) && isset($data['data']) && is_array($data['data'])) {
             return $data['data'];
         }
 
@@ -142,8 +131,118 @@ class SiPintuGatewayService
         return null;
     }
 
+    public function ping(): ?array
+    {
+        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
+        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+
+        if (empty($baseUrl) || empty($clientId)) {
+            return null;
+        }
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'X-Client-ID' => $clientId,
+            'X-Client-Secret' => $clientSecret,
+        ])->get($baseUrl.'/api/v1/ping', [
+            'client_id' => $clientId,
+        ]);
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return null;
+    }
+
+    public function validateClient(): ?array
+    {
+        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
+        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+
+        if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
+            return null;
+        }
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'X-Client-ID' => $clientId,
+            'X-Client-Secret' => $clientSecret,
+        ])->post($baseUrl.'/api/v1/validate-client', [
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+        ]);
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return null;
+    }
+
+    public function getStudents(?string $nis = null, ?string $search = null): ?array
+    {
+        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
+        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+
+        if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
+            return null;
+        }
+
+        $query = array_filter([
+            'nis' => $nis,
+            'search' => $search,
+        ]);
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'X-Client-ID' => $clientId,
+            'X-Client-Secret' => $clientSecret,
+        ])->get($baseUrl.'/api/v1/sijuna/students', $query);
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return null;
+    }
+
+    public function getTeachers(?string $nip = null, ?string $search = null): ?array
+    {
+        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
+        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+
+        if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
+            return null;
+        }
+
+        $query = array_filter([
+            'nip' => $nip,
+            'search' => $search,
+        ]);
+
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'X-Client-ID' => $clientId,
+            'X-Client-Secret' => $clientSecret,
+        ])->get($baseUrl.'/api/v1/sijuna/teachers', $query);
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        return null;
+    }
+
     public function syncAllUsersFromGateway(): array
     {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
         try {
             $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
             $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
@@ -172,17 +271,19 @@ class SiPintuGatewayService
             $studentCount = 0;
             $teacherCount = 0;
 
-            foreach ($users as $userData) {
-                $this->syncUserFromGateway(['user' => $userData], $this->extractPlainPassword($userData));
+            DB::transaction(function () use ($users, &$studentCount, &$teacherCount) {
+                foreach ($users as $userData) {
+                    $this->syncUserFromGateway($userData, $this->extractPlainPassword($userData));
 
-                $role = $this->normalizeRole($userData['role'] ?? $userData['user_type'] ?? $userData['type'] ?? null);
+                    $role = $this->normalizeRole($userData['role'] ?? $userData['user_type'] ?? $userData['type'] ?? null);
 
-                if ($role === 'guru') {
-                    $teacherCount++;
-                } else {
-                    $studentCount++;
+                    if ($role === 'guru') {
+                        $teacherCount++;
+                    } else {
+                        $studentCount++;
+                    }
                 }
-            }
+            });
 
             return [
                 'students' => $studentCount,
@@ -203,62 +304,46 @@ class SiPintuGatewayService
     protected function fetchAllUsersFromGateway(): array
     {
         try {
-            $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-            $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-            $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
-
-            if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
-                return [];
-            }
-
-            $endpoints = [
-                '/api/v1/sijuna/students',
-                '/api/v1/sijuna/teachers',
-                '/api/v1/users',
-                '/api/v1/users/all',
-                '/api/v1/sijuna/users',
-                '/api/v1/students',
-                '/api/v1/teachers',
-            ];
-
             $mergedUsers = [];
             $seenKeys = [];
 
-            foreach ($endpoints as $endpoint) {
-                try {
-                    $pages = $this->fetchPaginatedUsersFromSiPintu($baseUrl, $clientId, $clientSecret, $endpoint);
+            // 1. Fetch Students from SiPintu Gateway
+            $studentsRes = $this->getStudents();
+            $studentsData = $studentsRes['data'] ?? (is_array($studentsRes) ? $studentsRes : []);
 
-                    foreach ($pages as $item) {
-                        if (! is_array($item)) {
-                            continue;
-                        }
-
-                        $identityNumber = $item['identity_number']
-                            ?? $item['nis']
-                            ?? $item['nisn']
-                            ?? $item['nip']
-                            ?? $item['no_induk']
-                            ?? $item['nomor_induk']
-                            ?? $item['username']
-                            ?? $item['user_name']
-                            ?? $item['id']
-                            ?? $item['user_id']
-                            ?? $item['account_id']
-                            ?? null;
-
-                        if (blank($identityNumber)) {
-                            continue;
-                        }
-
-                        $key = (string) $identityNumber;
-
-                        if (! isset($seenKeys[$key])) {
-                            $seenKeys[$key] = true;
-                            $mergedUsers[] = $item;
-                        }
-                    }
-                } catch (\Throwable $e) {
+            foreach ($studentsData as $item) {
+                if (! is_array($item)) {
                     continue;
+                }
+                $item['role'] = $item['role'] ?? 'siswa';
+                $identityNumber = $this->extractIdentityNumber($item);
+                if (blank($identityNumber)) {
+                    continue;
+                }
+                $key = (string) $identityNumber;
+                if (! isset($seenKeys[$key])) {
+                    $seenKeys[$key] = true;
+                    $mergedUsers[] = $item;
+                }
+            }
+
+            // 2. Fetch Teachers from SiPintu Gateway
+            $teachersRes = $this->getTeachers();
+            $teachersData = $teachersRes['data'] ?? (is_array($teachersRes) ? $teachersRes : []);
+
+            foreach ($teachersData as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+                $item['role'] = $item['role'] ?? 'guru';
+                $identityNumber = $this->extractIdentityNumber($item);
+                if (blank($identityNumber)) {
+                    continue;
+                }
+                $key = (string) $identityNumber;
+                if (! isset($seenKeys[$key])) {
+                    $seenKeys[$key] = true;
+                    $mergedUsers[] = $item;
                 }
             }
 
@@ -268,58 +353,13 @@ class SiPintuGatewayService
         }
     }
 
-    protected function fetchPaginatedUsersFromSiPintu(string $baseUrl, string $clientId, string $clientSecret, string $endpoint): array
-    {
-        $page = 1;
-        $perPage = 200;
-        $allItems = [];
-
-        while ($page <= 100) {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Client-ID' => $clientId,
-                'X-Client-Secret' => $clientSecret,
-            ])->timeout(15)->get($baseUrl.$endpoint, [
-                'page' => $page,
-                'per_page' => $perPage,
-            ]);
-
-            if (! $response->successful()) {
-                break;
-            }
-
-            $payload = $response->json();
-            if (! is_array($payload)) {
-                break;
-            }
-
-            $items = $this->extractCollectionFromResponse($payload, 'users');
-            if (empty($items)) {
-                break;
-            }
-
-            $allItems = array_merge($allItems, $items);
-
-            $lastPage = $payload['last_page'] ?? $payload['lastPage'] ?? null;
-            $total = $payload['total'] ?? $payload['count'] ?? null;
-
-            if (is_numeric($lastPage) && (int) $lastPage <= $page) {
-                break;
-            }
-
-            if (is_numeric($total) && count($allItems) >= (int) $total) {
-                break;
-            }
-
-            $page++;
-        }
-
-        return $allItems;
-    }
-
     public function syncUserFromGateway(array $payload, string $password): ?User
     {
-        $userData = $payload['user'] ?? $payload['data']['user'] ?? $payload['data'] ?? $payload['account'] ?? $payload;
+        if (isset($payload['nis']) || isset($payload['nip']) || isset($payload['nama']) || isset($payload['identity_number']) || isset($payload['no_induk'])) {
+            $userData = $payload;
+        } else {
+            $userData = $payload['data']['user'] ?? $payload['data'] ?? $payload['account'] ?? $payload['user'] ?? $payload;
+        }
 
         if (! is_array($userData)) {
             return null;
@@ -328,24 +368,23 @@ class SiPintuGatewayService
         $identityNumber = $this->firstNonEmptyValue($userData, [
             'identity_number',
             'nis',
-            'nisn',
             'nip',
+            'nisn',
             'no_induk',
             'nomor_induk',
             'no_induk_guru',
             'username',
-            'id',
-            'user_id',
-            'account_id',
         ]);
 
         $name = $this->firstNonEmptyValue($userData, [
-            'name',
-            'full_name',
-            'nama_lengkap',
             'nama',
-            'display_name',
+            'nama_lengkap',
+            'full_name',
             'fullName',
+            'nama_siswa',
+            'nama_guru',
+            'name',
+            'display_name',
             'user_name',
         ], 'SiPintu User');
 
@@ -355,6 +394,8 @@ class SiPintuGatewayService
             $identityNumber,
         );
         $rawClassValue = $this->normalizeNullableValue($this->firstNonEmptyValue($userData, [
+            'classroom.name',
+            'classroom_name',
             'class_group',
             'class_group_name',
             'group',
@@ -402,11 +443,15 @@ class SiPintuGatewayService
             'is_active' => (bool) $isActive,
         ];
 
-        if (! blank($password)) {
-            $attributes['password'] = Hash::make($password);
-        }
+        $effectivePassword = ! blank($password) ? $password : $this->extractPlainPassword($userData);
+        $fallbackPassword = ! blank($effectivePassword) ? $effectivePassword : (! blank($birthDate) ? $birthDate : $identityNumber);
 
         if ($user) {
+            if (! blank($effectivePassword)) {
+                if (empty($user->password) || ! Hash::check($effectivePassword, $user->password)) {
+                    $attributes['password'] = Hash::make($effectivePassword);
+                }
+            }
             $user->fill($attributes);
             $user->save();
 
@@ -414,7 +459,7 @@ class SiPintuGatewayService
         }
 
         return User::create(array_merge($attributes, [
-            'password' => $password ? Hash::make($password) : Hash::make(Str::random(12)),
+            'password' => Hash::make($fallbackPassword),
         ]));
     }
 
@@ -460,16 +505,22 @@ class SiPintuGatewayService
 
         if (preg_match('/\b(?:KELAS\s+)?(X|XI|XII|XIII|10|11|12)\b/i', $upper, $match)) {
             return match (strtoupper($match[1])) {
-                'X', '10' => '10',
-                'XI', '11' => '11',
-                'XII', '12' => '12',
-                'XIII', '13' => '13',
+                'X', '10' => 'X',
+                'XI', '11' => 'XI',
+                'XII', '12' => 'XII',
+                'XIII', '13' => 'XIII',
                 default => $match[1],
             };
         }
 
         if (preg_match('/\b(\d{1,2})\b/', $normalized, $match)) {
-            return (string) (int) $match[1];
+            return match ((int) $match[1]) {
+                10 => 'X',
+                11 => 'XI',
+                12 => 'XII',
+                13 => 'XIII',
+                default => (string) (int) $match[1],
+            };
         }
 
         return $normalized;
@@ -522,9 +573,29 @@ class SiPintuGatewayService
 
     protected function firstNonEmptyValue(array $data, array $keys, mixed $default = null): mixed
     {
+        // 1. Check direct keys on $data first
         foreach ($keys as $key) {
-            if (array_key_exists($key, $data) && ! blank($data[$key])) {
+            if (str_contains($key, '.')) {
+                $val = data_get($data, $key);
+                if (! blank($val)) {
+                    return $val;
+                }
+            } elseif (array_key_exists($key, $data) && ! blank($data[$key])) {
                 return $data[$key];
+            }
+        }
+
+        // 2. Check nested arrays ($data['user'] or $data['classroom'])
+        foreach ($keys as $key) {
+            if (isset($data['user']) && is_array($data['user']) && array_key_exists($key, $data['user']) && ! blank($data['user'][$key])) {
+                if ($key === 'name' && is_numeric($data['user'][$key])) {
+                    continue;
+                }
+
+                return $data['user'][$key];
+            }
+            if (isset($data['classroom']) && is_array($data['classroom']) && array_key_exists($key, $data['classroom']) && ! blank($data['classroom'][$key])) {
+                return $data['classroom'][$key];
             }
         }
 
@@ -598,15 +669,17 @@ class SiPintuGatewayService
             'default_password',
             'user_password',
             'login_password',
-            'password_hash',
             'passwordText',
             'new_password',
+            'user.password',
+            'user.plain_password',
         ] as $key) {
-            if (! empty($data[$key])) {
-                return (string) $data[$key];
+            $val = str_contains($key, '.') ? data_get($data, $key) : ($data[$key] ?? null);
+            if (! empty($val)) {
+                return (string) $val;
             }
         }
 
-        return '';
+        return 'password';
     }
 }

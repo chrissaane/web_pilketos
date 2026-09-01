@@ -16,6 +16,9 @@ class VoterController extends Controller
 {
     public function syncFromSiPintu(Request $request)
     {
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
         try {
             $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
             $count = (int) ($result['total'] ?? 0);
@@ -86,7 +89,7 @@ class VoterController extends Controller
             ->when($selectedFilter === 'semua', fn($q) => $q->whereIn('role', ['siswa', 'guru']))
             ->when(in_array($selectedFilter, ['x','xi','xii'], true), function ($q) use ($selectedFilter) {
                 $q->where('role', 'siswa')
-                    ->where('class_group', $this->resolveClassGroup($selectedFilter));
+                    ->whereIn('class_group', $this->resolveClassGroupValues($selectedFilter));
             })
             ->orderByRaw("CASE WHEN role = 'guru' THEN 1 ELSE 0 END")
             ->orderBy('class_group')
@@ -193,13 +196,13 @@ class VoterController extends Controller
         return $query->value('token');
     }
 
-    private function resolveClassGroup(string $filter): string
+    private function resolveClassGroupValues(string $filter): array
     {
         return match ($filter) {
-            'x' => '10',
-            'xi' => '11',
-            'xii' => '12',
-            default => '10',
+            'x' => ['X', '10'],
+            'xi' => ['XI', '11'],
+            'xii' => ['XII', '12'],
+            default => ['X', '10'],
         };
     }
 
