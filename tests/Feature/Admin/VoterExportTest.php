@@ -184,7 +184,7 @@ test('gateway imports all paginated siPintu students and teachers', function () 
     Http::fake([
         'https://sipintu.smkn1bangsri.sch.id/api/v1/sijuna/students?page=1&per_page=200' => Http::response([
             'data' => [
-                ['nis' => '1001', 'name' => 'Siswa 1', 'role' => 'siswa'],
+                ['nis' => '1001', 'name' => 'Siswa 1', 'role' => 'siswa', 'classroom' => ['name' => 'X PPLG 1']],
             ],
             'current_page' => 1,
             'last_page' => 2,
@@ -192,8 +192,8 @@ test('gateway imports all paginated siPintu students and teachers', function () 
         ], 200),
         'https://sipintu.smkn1bangsri.sch.id/api/v1/sijuna/students?page=2&per_page=200' => Http::response([
             'data' => [
-                ['nis' => '1002', 'name' => 'Siswa 2', 'role' => 'siswa'],
-                ['nis' => '1003', 'name' => 'Siswa 3', 'role' => 'siswa'],
+                ['nis' => '1002', 'name' => 'Siswa 2', 'role' => 'siswa', 'classroom' => ['name' => 'X PPLG 1']],
+                ['nis' => '1003', 'name' => 'Siswa 3', 'role' => 'siswa', 'classroom' => ['name' => 'X PPLG 2']],
             ],
             'current_page' => 2,
             'last_page' => 2,

@@ -109,11 +109,11 @@ class HomeController extends Controller
     {
         try {
             $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
-            $message = $result['message'] ?? 'Sinkronisasi selesai.';
-            $count = (int) ($result['total'] ?? 0);
+            $isSuccess = (bool) ($result['success'] ?? false);
+            $message = $result['message'] ?? ($isSuccess ? 'Sinkronisasi selesai.' : 'Sinkronisasi gagal.');
 
-            if ($count > 0) {
-                return redirect()->route('sipintu.data')->with('success', $message.' Ditemukan '.$count.' data baru.');
+            if ($isSuccess) {
+                return redirect()->route('sipintu.data')->with('success', $message);
             }
 
             return redirect()->route('sipintu.data')->with('error', $message);

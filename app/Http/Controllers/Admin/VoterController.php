@@ -21,8 +21,9 @@ class VoterController extends Controller
 
         try {
             $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
+            $isSuccess = (bool) ($result['success'] ?? false);
             $count = (int) ($result['total'] ?? 0);
-            $message = $result['message'] ?? 'Sinkronisasi SiPintu selesai.';
+            $message = $result['message'] ?? ($isSuccess ? 'Sinkronisasi SiPintu selesai.' : 'Sinkronisasi SiPintu gagal.');
 
             $redirectTo = route('admin.voters.index', [
                 'filter' => $request->query('filter', 'semua'),
@@ -31,17 +32,17 @@ class VoterController extends Controller
 
             if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 $payload = [
-                    'success' => $count > 0 || str_contains(strtolower($message), 'selesai') || ! str_contains(strtolower($message), 'gagal'),
-                    'message' => $count > 0 ? $message.' Ditemukan '.$count.' data baru.' : $message,
+                    'success' => $isSuccess,
+                    'message' => $message,
                     'count' => $count,
                     'redirect' => $redirectTo,
                 ];
 
-                return response()->json($payload);
+                return response()->json($payload, $isSuccess ? 200 : 422);
             }
 
-            if ($count > 0) {
-                return redirect($redirectTo)->with('success', $message.' Ditemukan '.$count.' data baru.');
+            if ($isSuccess) {
+                return redirect($redirectTo)->with('success', $message);
             }
 
             return redirect($redirectTo)->with('error', $message);

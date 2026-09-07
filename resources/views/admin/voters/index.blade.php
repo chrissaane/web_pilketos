@@ -138,8 +138,12 @@
 
         @if (session('error'))
             <div
-                class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-                {{ session('error') }}
+                class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+                <i class="fa-solid fa-circle-exclamation mt-0.5 text-base text-rose-600 dark:text-rose-400"></i>
+                <div>
+                    <p class="font-semibold">Sinkronisasi Gagal</p>
+                    <p class="mt-0.5">{{ session('error') }}</p>
+                </div>
             </div>
         @endif
 
@@ -296,8 +300,8 @@
                     .then(async (response) => {
                         const data = await response.json().catch(() => ({}));
 
-                        if (!response.ok) {
-                            throw new Error((data && data.message) || 'Sinkronisasi gagal.');
+                        if (!response.ok || data.success === false) {
+                            throw new Error((data && data.message) || 'Sinkronisasi gagal dilakukan.');
                         }
 
                         if (data && data.redirect) {
@@ -325,9 +329,9 @@
                         if (window.Swal) {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Sinkronisasi selesai',
+                                title: 'Sinkronisasi Selesai',
                                 text: data.message || 'Data SiPintu berhasil diperbarui.',
-                                timer: 2200,
+                                timer: 2500,
                                 showConfirmButton: false
                             });
                         } else {
@@ -338,8 +342,10 @@
                         if (window.Swal) {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Sinkronisasi gagal',
-                                text: error.message || 'Terjadi kesalahan saat sinkronisasi.'
+                                title: 'Sinkronisasi Gagal',
+                                text: error.message || 'Terjadi kesalahan saat sinkronisasi data SiPintu.',
+                                confirmButtonText: 'Tutup',
+                                confirmButtonColor: '#e11d48'
                             });
                         } else {
                             alert(error.message || 'Sinkronisasi gagal.');

@@ -88,6 +88,14 @@
             font-size: 13px;
         }
 
+        .login-editorial .login-success {
+            border: 1px solid rgba(16, 185, 129, .25);
+            background: #ecfdf5;
+            padding: 13px;
+            color: #065f46;
+            font-size: 13px;
+        }
+
         html.dark .login-editorial {
             background: #101116;
             color: #f3f5ff;
@@ -127,6 +135,12 @@
             color: #ff9d9d;
         }
 
+        html.dark .login-editorial .login-success {
+            border-color: rgba(52, 211, 153, .25);
+            background: rgba(16, 185, 129, .08);
+            color: #6ee7b7;
+        }
+
         @media (max-width: 640px) {
             .login-editorial {
                 padding: 45px 15px;
@@ -153,6 +167,18 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="login-error">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if (session('success') || session('status'))
+                <div class="login-success">
+                    {{ session('success') ?? session('status') }}
+                </div>
+            @endif
+
             <form action="{{ route('login.post') }}" method="POST" class="space-y-5" x-data="{ showPassword: false }">
                 @csrf
 
@@ -167,11 +193,14 @@
 
                 <!-- Input Password / Tanggal Lahir -->
                 <div>
-                    <label class="login-label">
-                        Password / Tanggal Lahir
-                    </label>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="login-label mb-0">
+                            Password / Tanggal Lahir
+                        </label>
+                        <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Contoh: 12/05/2008 atau 2008-05-12</span>
+                    </div>
                     <div class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="00/00/0000"
+                        <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="00/00/0000 atau password Anda"
                             class="login-input pr-20">
 
                         <button type="button" @click="showPassword = !showPassword"

@@ -33,8 +33,12 @@
 
         @if (session('error'))
             <div
-                class="mb-8 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-                {{ session('error') }}
+                class="mb-8 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+                <i class="fa-solid fa-circle-exclamation mt-0.5 text-base text-rose-600 dark:text-rose-400"></i>
+                <div>
+                    <p class="font-semibold">Sinkronisasi Gagal</p>
+                    <p class="mt-0.5">{{ session('error') }}</p>
+                </div>
             </div>
         @endif
 
