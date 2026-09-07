@@ -197,7 +197,7 @@ class SiPintuGatewayService
             'search' => $search,
         ]);
 
-        $response = Http::withHeaders([
+        $response = Http::timeout(60)->withHeaders([
             'Accept' => 'application/json',
             'X-Client-ID' => $clientId,
             'X-Client-Secret' => $clientSecret,
@@ -225,7 +225,7 @@ class SiPintuGatewayService
             'search' => $search,
         ]);
 
-        $response = Http::withHeaders([
+        $response = Http::timeout(60)->withHeaders([
             'Accept' => 'application/json',
             'X-Client-ID' => $clientId,
             'X-Client-Secret' => $clientSecret,
@@ -311,6 +311,19 @@ class SiPintuGatewayService
             $studentsRes = $this->getStudents();
             $studentsData = $studentsRes['data'] ?? (is_array($studentsRes) ? $studentsRes : []);
 
+            // Prioritize active students with valid classrooms first, then newer IDs
+            usort($studentsData, function ($a, $b) {
+                if (! is_array($a) || ! is_array($b)) {
+                    return 0;
+                }
+                $hasA = ! empty($a['classroom'] ?? $a['kelas'] ?? $a['classroom_name'] ?? $a['class'] ?? null);
+                $hasB = ! empty($b['classroom'] ?? $b['kelas'] ?? $b['classroom_name'] ?? $b['class'] ?? null);
+                if ($hasA !== $hasB) {
+                    return $hasA ? -1 : 1;
+                }
+                return ($b['id'] ?? 0) <=> ($a['id'] ?? 0);
+            });
+
             foreach ($studentsData as $item) {
                 if (! is_array($item)) {
                     continue;
@@ -395,6 +408,8 @@ class SiPintuGatewayService
         );
         $rawClassValue = $this->normalizeNullableValue($this->firstNonEmptyValue($userData, [
             'classroom.name',
+            'classroom.nama',
+            'classroom',
             'classroom_name',
             'class_group',
             'class_group_name',
@@ -410,6 +425,8 @@ class SiPintuGatewayService
             'student_class',
             'tingkat',
             'level',
+            'rombel',
+            'nama_rombel',
         ]));
 
         $rawMajor = $this->normalizeNullableValue($this->firstNonEmptyValue($userData, ['major', 'jurusan', 'program_studi', 'study_program', 'jurusan_name']));
@@ -420,7 +437,12 @@ class SiPintuGatewayService
 
         $birthDate = $this->firstNonEmptyValue($userData, ['birth_date', 'tanggal_lahir', 'date_of_birth', 'dob', 'tgl_lahir']);
         $phone = $this->firstNonEmptyValue($userData, ['phone', 'phone_number', 'telephone', 'no_hp', 'telepon', 'mobile', 'nomor_telepon', 'telp']);
-        $isActive = $this->firstNonEmptyValue($userData, ['is_active', 'active', 'status_aktif', 'is_active_user', 'status_user'], true);
+        $isClassEmpty = blank($classGroup) && blank($rawClassValue);
+        $defaultActive = ! ($role === 'siswa' && $isClassEmpty);
+        $isActive = (bool) $this->firstNonEmptyValue($userData, ['is_active', 'active', 'status_aktif', 'is_active_user', 'status_user'], $defaultActive);
+        if ($role === 'siswa' && $isClassEmpty) {
+            $isActive = false;
+        }
 
         if (blank($identityNumber)) {
             return null;
@@ -558,6 +580,10 @@ class SiPintuGatewayService
 
     protected function normalizeNullableValue(mixed $value): mixed
     {
+        if (is_array($value)) {
+            $value = $value['name'] ?? $value['nama'] ?? $value['title'] ?? null;
+        }
+
         if (! is_string($value)) {
             return $value;
         }
