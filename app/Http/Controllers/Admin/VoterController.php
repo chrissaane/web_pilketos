@@ -6,6 +6,7 @@ use App\Exports\VoterCredentialsExport;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Election;
+use App\Models\Vote;
 use App\Models\VotingToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -28,6 +29,7 @@ class VoterController extends Controller
             $redirectTo = route('admin.voters.index', [
                 'filter' => $request->query('filter', 'semua'),
                 'major' => $request->query('major', 'semua'),
+                'voting_status' => $request->query('voting_status', 'semua'),
             ]);
 
             if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
@@ -50,6 +52,7 @@ class VoterController extends Controller
             $redirectTo = route('admin.voters.index', [
                 'filter' => $request->query('filter', 'semua'),
                 'major' => $request->query('major', 'semua'),
+                'voting_status' => $request->query('voting_status', 'semua'),
             ]);
 
             if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
@@ -68,14 +71,43 @@ class VoterController extends Controller
     {
         $filters = [
             'semua' => 'Semua',
-            'x' => 'X',
-            'xi' => 'XI',
-            'xii' => 'XII',
-            'alumni' => 'Alumni',
             'guru' => 'Guru',
         ];
 
+        $classFilters = User::query()
+            ->where('role', 'siswa')
+            ->where('is_active', true)
+            ->whereNotNull('class_group')
+            ->whereRaw("TRIM(class_group) <> ''")
+            ->get(['class_group', 'major'])
+            ->map(function ($student) {
+                $label = $this->formatClassDisplay($student->class_group, $student->major);
+
+                return [
+                    'key' => 'kelas_'.Str::slug($student->class_group.'-'.$student->major, '_'),
+                    'label' => Str::after($label, 'Kelas '),
+                    'class_group' => trim((string) $student->class_group),
+                    'major' => trim((string) $student->major),
+                ];
+            })
+            ->unique('key')
+            ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE);
+
+        foreach ($classFilters as $classFilter) {
+            $filters[$classFilter['key']] = $classFilter['label'];
+        }
+
         $selectedFilter = strtolower($request->query('filter', 'semua'));
+        $selectedClassFilter = $classFilters->firstWhere('key', $selectedFilter);
+        $votingStatuses = [
+            'semua' => 'Semua Status',
+            'belum_memilih' => 'Belum Memilih',
+            'sudah_memilih' => 'Sudah Memilih',
+        ];
+        $selectedVotingStatus = strtolower($request->query('voting_status', 'semua'));
+        if (! array_key_exists($selectedVotingStatus, $votingStatuses)) {
+            $selectedVotingStatus = 'semua';
+        }
         $selectedMajor = 'semua';
 
         // Get active election (time-based)
@@ -85,19 +117,53 @@ class VoterController extends Controller
             ->first();
 
         $voters = User::query()
-            ->when($selectedFilter === 'alumni', fn($q) => $q->where('role', 'siswa')->where('is_active', false))
+            ->eligibleVoters()
             ->when($selectedFilter === 'guru', fn($q) => $q->where('role', 'guru'))
-            ->when($selectedFilter === 'semua', fn($q) => $q->whereIn('role', ['siswa', 'guru']))
-            ->when(in_array($selectedFilter, ['x','xi','xii'], true), function ($q) use ($selectedFilter) {
+            ->when($selectedFilter === 'semua', fn($q) => $q->where(function ($roleQuery) {
+                $roleQuery->where('role', 'guru')
+                    ->orWhere(function ($studentQuery) {
+                        $studentQuery->where('role', 'siswa')->where('is_active', true);
+                    });
+            }))
+            ->when($selectedClassFilter, function ($q) use ($selectedClassFilter) {
                 $q->where('role', 'siswa')
-                    ->whereIn('class_group', $this->resolveClassGroupValues($selectedFilter));
+                    ->where('class_group', $selectedClassFilter['class_group'])
+                    ->when($selectedClassFilter['major'] === '', fn ($query) => $query->where(function ($majorQuery) {
+                        $majorQuery->whereNull('major')->orWhere('major', '');
+                    }), fn ($query) => $query->where('major', $selectedClassFilter['major']));
             })
             ->orderByRaw("CASE WHEN role = 'guru' THEN 1 ELSE 0 END")
             ->orderBy('class_group')
             ->orderBy('name')
             ->get();
 
-        $accounts = $voters->map(function ($voter) use ($activeElection) {
+        $voters = $voters->sort(function ($firstVoter, $secondVoter) {
+            $firstIdentity = trim((string) ($firstVoter->identity_number ?? ''));
+            $secondIdentity = trim((string) ($secondVoter->identity_number ?? ''));
+
+            if ($firstIdentity === '' || $secondIdentity === '') {
+                return $firstIdentity === '' ? ($secondIdentity === '' ? 0 : 1) : -1;
+            }
+
+            return strnatcasecmp(
+                $firstIdentity,
+                $secondIdentity
+            );
+        })->values();
+
+        $votedUserIds = $activeElection
+            ? Vote::query()->where('election_id', $activeElection->id)->pluck('user_id')->all()
+            : [];
+
+        if ($selectedVotingStatus !== 'semua') {
+            $voters = $voters->filter(function ($voter) use ($selectedVotingStatus, $votedUserIds) {
+                $hasVoted = in_array($voter->id, $votedUserIds, true);
+
+                return $selectedVotingStatus === 'sudah_memilih' ? $hasVoted : ! $hasVoted;
+            })->values();
+        }
+
+        $accounts = $voters->map(function ($voter) use ($activeElection, $votedUserIds) {
             $token = $this->resolveToken($voter->id, $activeElection);
 
             return [
@@ -109,7 +175,7 @@ class VoterController extends Controller
                 'email' => $voter->email ?: 'N/A',
                 'major' => $voter->major ?: 'N/A',
                 'phone' => $voter->phone ?: 'N/A',
-                'status' => $voter->is_active ? 'Aktif' : 'Alumni',
+                'status' => in_array($voter->id, $votedUserIds, true) ? 'Sudah Memilih' : 'Belum Memilih',
                 'password' => $voter->password ? 'Terdaftar' : 'N/A',
                 'token' => $token ?? 'N/A',
                 'user_id' => $voter->id,
@@ -128,7 +194,7 @@ class VoterController extends Controller
             return view('admin.voters.partials.table', compact('accounts'));
         }
 
-        return view('admin.voters.index', compact('filters', 'selectedFilter', 'selectedMajor', 'accounts', 'activeCard', 'activeElection'));
+        return view('admin.voters.index', compact('filters', 'selectedFilter', 'selectedMajor', 'accounts', 'activeCard', 'activeElection', 'votingStatuses', 'selectedVotingStatus'));
     }
 
     /**
@@ -153,7 +219,7 @@ class VoterController extends Controller
             ->latest('start_time')
             ->first();
 
-        $voters = User::where('is_active', true)
+        $voters = User::eligibleVoters()
             ->when($selectedFilter !== 'semua', function ($query) use ($selectedFilter) {
                 if ($selectedFilter === 'guru') {
                     $query->where('role', 'guru');
@@ -163,6 +229,20 @@ class VoterController extends Controller
                 }
             })
             ->get();
+
+        $voters = $voters->sort(function ($firstVoter, $secondVoter) {
+            $firstIdentity = trim((string) ($firstVoter->identity_number ?? ''));
+            $secondIdentity = trim((string) ($secondVoter->identity_number ?? ''));
+
+            if ($firstIdentity === '' || $secondIdentity === '') {
+                return $firstIdentity === '' ? ($secondIdentity === '' ? 0 : 1) : -1;
+            }
+
+            return strnatcasecmp(
+                $firstIdentity,
+                $secondIdentity
+            );
+        })->values();
 
         $accounts = $voters->map(function ($voter) use ($activeElection) {
             $token = $this->resolveToken($voter->id, $activeElection);

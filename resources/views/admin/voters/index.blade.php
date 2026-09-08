@@ -109,19 +109,33 @@
                 </div>
 
                 <!-- Filter Dropdown -->
-                <div class="mt-4 w-full max-w-sm">
-                    <label for="filter" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tingkat</label>
-                    <form method="GET" action="{{ route('admin.voters.index') }}" class="mt-2 space-y-3">
-                        <select id="filter" name="filter"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-400 dark:focus:ring-blue-900">
-                            @foreach ($filters as $slug => $label)
-                                <option value="{{ $slug }}" {{ $selectedFilter === $slug ? 'selected' : '' }}>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
+                <div class="mt-4 grid w-full max-w-xl gap-3 sm:grid-cols-2">
+                    <form id="voterFilterForm" method="GET" action="{{ route('admin.voters.index') }}" class="contents">
+                        <div class="space-y-2">
+                            <label for="filter"
+                                class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tingkat</label>
+                            <select id="filter" name="filter"
+                                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-400 dark:focus:ring-blue-900">
+                                @foreach ($filters as $slug => $label)
+                                    <option value="{{ $slug }}" {{ $selectedFilter === $slug ? 'selected' : '' }}>
+                                        {{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="voting_status"
+                                class="text-sm font-semibold text-slate-700 dark:text-slate-300">Status Voting</label>
+                            <select id="voting_status" name="voting_status"
+                                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                @foreach ($votingStatuses as $statusKey => $statusLabel)
+                                    <option value="{{ $statusKey }}"
+                                        {{ $selectedVotingStatus === $statusKey ? 'selected' : '' }}>{{ $statusLabel }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <button type="submit"
-                            class="w-full rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            class="w-full rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 sm:col-span-2">
                             Terapkan
                         </button>
                     </form>
@@ -182,8 +196,8 @@
             </div>
 
             <!-- Table Section -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                <div class="overflow-x-auto">
+            <div class="min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                <div class="max-w-full overflow-x-auto">
                     <table class="min-w-full text-sm text-slate-700 dark:text-slate-300">
                         <thead
                             class="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
@@ -301,7 +315,8 @@
                         const data = await response.json().catch(() => ({}));
 
                         if (!response.ok || data.success === false) {
-                            throw new Error((data && data.message) || 'Sinkronisasi gagal dilakukan.');
+                            throw new Error((data && data.message) ||
+                                'Sinkronisasi gagal dilakukan.');
                         }
 
                         if (data && data.redirect) {
@@ -343,7 +358,8 @@
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Sinkronisasi Gagal',
-                                text: error.message || 'Terjadi kesalahan saat sinkronisasi data SiPintu.',
+                                text: error.message ||
+                                    'Terjadi kesalahan saat sinkronisasi data SiPintu.',
                                 confirmButtonText: 'Tutup',
                                 confirmButtonColor: '#e11d48'
                             });

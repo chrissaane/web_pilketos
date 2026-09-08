@@ -30,6 +30,18 @@ class DashboardController extends Controller
         return redirect()->route('siswa.dashboard');
     }
 
+    public function history()
+    {
+        $user = Auth::user();
+        $history = Vote::query()
+            ->with(['election', 'candidate'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return view('dashboard.history', compact('user', 'history'));
+    }
+
     public function siswaDashboard()
     {
         $user = Auth::user();
@@ -45,7 +57,7 @@ class DashboardController extends Controller
             ->latest()
             ->get();
         $stats = ['elections' => $history->count()];
-        $totalVoters = User::query()->whereIn('role', ['guru', 'siswa'])->count();
+        $totalVoters = User::query()->eligibleVoters()->count();
         $participation = $election && $totalVoters > 0 ? round(Vote::query()->where('election_id', $election->id)->count() / $totalVoters * 100) : 0;
 
         return view('dashboard.siswa', compact('user', 'election', 'hasVoted', 'history', 'stats', 'participation'));
@@ -65,7 +77,7 @@ class DashboardController extends Controller
             ->latest()
             ->get();
         $stats = ['elections' => $history->count()];
-        $participation = $election ? round(Vote::query()->where('election_id', $election->id)->count() / max(User::query()->whereIn('role', ['guru', 'siswa'])->count(), 1) * 100) : 0;
+        $participation = $election ? round(Vote::query()->where('election_id', $election->id)->count() / max(User::query()->eligibleVoters()->count(), 1) * 100) : 0;
         $hasVoted = $election ? $history->contains('election_id', $election->id) : false;
 
         return view('dashboard.guru', compact('user', 'election', 'hasVoted', 'history', 'stats', 'participation'));
@@ -86,19 +98,27 @@ class DashboardController extends Controller
 
         $totalElections = Election::query()->count();
         $activeElections = Election::query()->where('status', Election::STATUS_ACTIVE)->count();
-        $voterCount = User::query()->whereIn('role', ['guru', 'siswa'])->count();
-        $allUsers = User::query()->get();
-        $siswaCount = $allUsers->filter(fn ($user) => $this->classifyUserRole($user->identity_number, $user->role) === 'siswa')->count();
-        $guruCount = $allUsers->filter(fn ($user) => $this->classifyUserRole($user->identity_number, $user->role) === 'guru')->count();
-        $onlineCount = User::query()->where('is_active', true)->count();
+        $eligibleVoters = User::query()->eligibleVoters()->get();
+        $voterCount = $eligibleVoters->count();
+        $siswaCount = $eligibleVoters->where('role', 'siswa')->count();
+        $guruCount = $eligibleVoters->where('role', 'guru')->count();
+        $onlineCount = $eligibleVoters->where('is_active', true)->count();
 
-        $selectedElectionVotes = $selectedElection ? Vote::query()->where('election_id', $selectedElection->id)->count() : 0;
+        $selectedElectionVotes = $selectedElection
+            ? Vote::query()
+                ->where('election_id', $selectedElection->id)
+                ->whereIn('user_id', $eligibleVoters->pluck('id'))
+                ->count()
+            : 0;
         $notVotedCount = max($voterCount - $selectedElectionVotes, 0);
         $progressPercent = $voterCount > 0 ? round(($selectedElectionVotes / $voterCount) * 100) : 0;
 
         $candidates = collect();
         if ($selectedElection) {
-            $candidates = $selectedElection->candidates()->withCount('votes')->orderBy('candidate_number')->get();
+            $candidates = $selectedElection->candidates()
+                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoters->pluck('id'))])
+                ->orderBy('candidate_number')
+                ->get();
             $totalVotes = $candidates->sum('votes_count');
             $candidates = $candidates->map(function ($candidate) use ($totalVotes) {
                 $percent = $totalVotes > 0 ? number_format(($candidate->votes_count / $totalVotes) * 100, 0) . '%' : '0%';
@@ -128,6 +148,9 @@ class DashboardController extends Controller
 
         $classTurnout = User::query()
             ->where('role', 'siswa')
+            ->where('is_active', true)
+            ->whereNotNull('class_group')
+            ->whereRaw("TRIM(class_group) <> ''")
             ->select('class_group', DB::raw('count(*) as total'))
             ->groupBy('class_group')
             ->orderByDesc('total')
@@ -137,6 +160,9 @@ class DashboardController extends Controller
         $votesByClass = Vote::query()
             ->join('users', 'votes.user_id', '=', 'users.id')
             ->where('users.role', 'siswa')
+            ->where('users.is_active', true)
+            ->whereNotNull('users.class_group')
+            ->whereRaw("TRIM(users.class_group) <> ''")
             ->select('users.class_group', DB::raw('count(votes.id) as voted'))
             ->groupBy('users.class_group')
             ->pluck('voted', 'class_group');
@@ -224,14 +250,18 @@ class DashboardController extends Controller
         $candidateRows = [];
 
         if ($selectedElection) {
-            $candidates = $selectedElection->candidates()->withCount('votes')->orderBy('candidate_number')->get();
+            $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
+            $candidates = $selectedElection->candidates()
+                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
+                ->orderBy('candidate_number')
+                ->get();
             $candidateRows = $candidates;
             $chartLabels = $candidates->pluck('name')->toArray();
             $chartData = $candidates->pluck('votes_count')->toArray();
         }
 
-        $totalVotes = $selectedElection?->votes_count ?? array_sum($chartData);
-        $voterCount = User::query()->whereIn('role', ['guru', 'siswa'])->count();
+        $totalVotes = array_sum($chartData);
+        $voterCount = User::query()->eligibleVoters()->count();
         $participation = $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0;
 
         return view('admin.statistics.index', compact(

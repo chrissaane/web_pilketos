@@ -36,6 +36,14 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('history') }}" x-on:click="mobileMenu = false"
+                    class="voter-sidebar-link {{ request()->routeIs('history') ? 'is-active' : '' }}">
+                    <i
+                        class="fa-solid fa-clock-rotate-left w-5 text-center {{ request()->routeIs('history') ? '' : 'opacity-70' }}"></i>
+                    <span>History</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('home') }}" x-on:click="mobileMenu = false" class="voter-sidebar-link">
                     <i class="fa-solid fa-house w-5 text-center opacity-70"></i>
                     <span>Beranda</span>

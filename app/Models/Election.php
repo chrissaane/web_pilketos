@@ -99,7 +99,7 @@ class Election extends Model
         }
 
         try {
-            $voters = User::whereIn('role', ['siswa', 'guru'])->where('is_active', true)->get();
+            $voters = User::eligibleVoters()->get();
 
             DB::transaction(function () use ($voters, $election, $force) {
                 if ($force) {

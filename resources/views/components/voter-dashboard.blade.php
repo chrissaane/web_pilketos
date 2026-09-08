@@ -230,30 +230,6 @@
                 @endif
             </div>
 
-            <div
-                class="voter-panel voter-accent rounded-3xl bg-white p-5 shadow-sm border border-slate-200 dark:bg-slate-950 dark:border-slate-800 sm:col-span-2 xl:col-span-1">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <p class="text-sm text-slate-500">Total Partisipasi</p>
-                        <p class="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{{ $stats['elections'] ?? 0 }}
-                            Pemilihan</p>
-                    </div>
-                    <div
-                        class="shrink-0 rounded-3xl bg-slate-100 p-3 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                        <i class="fa-solid fa-check-double"></i>
-                    </div>
-                </div>
-                <div class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                    <div class="flex items-center justify-between">
-                        <span>Pilkets 2023</span>
-                        <span class="text-emerald-600">✔</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span>Pemilihan Majelis</span>
-                        <span class="text-emerald-600">✔</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -306,40 +282,5 @@
             </div>
         </div>
 
-        <section class="voter-panel voter-accent rounded-[2rem] bg-white p-6 shadow-sm dark:bg-slate-950">
-            <div class="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Riwayat</p>
-                    <h2 class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Histori Pemilihan</h2>
-                </div>
-                <span class="text-sm text-slate-500 dark:text-slate-400">{{ $history->count() }} pemilihan
-                    diikuti</span>
-            </div>
-
-            @if ($history->isEmpty())
-                <div
-                    class="mt-5 border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                    Belum ada histori pemilihan. Informasi akan muncul setelah Anda memberikan suara.
-                </div>
-            @else
-                <div
-                    class="mt-5 divide-y divide-slate-200 border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-                    @foreach ($history as $vote)
-                        <div class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p class="font-bold text-slate-900 dark:text-white">
-                                    {{ $vote->election?->title ?? 'Pemilihan' }}</p>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Pilihan:
-                                    {{ $vote->candidate?->name ?? 'Kandidat' }}</p>
-                            </div>
-                            <time class="text-xs text-slate-500 dark:text-slate-400"
-                                datetime="{{ $vote->created_at?->toIso8601String() }}">
-                                {{ $vote->created_at?->translatedFormat('d M Y, H:i') }}
-                            </time>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
     </div>
 </div>

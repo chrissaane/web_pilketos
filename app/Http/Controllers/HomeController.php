@@ -21,7 +21,7 @@ class HomeController extends Controller
         $resultElection = $elections->first();
         $resultCandidates = $resultElection?->candidates ?? collect();
         $resultTotalVotes = $resultCandidates->sum('votes_count');
-        $resultVoterCount = User::query()->whereIn('role', ['guru', 'siswa'])->count();
+        $resultVoterCount = User::query()->eligibleVoters()->count();
         $resultParticipation = $resultVoterCount > 0
             ? round(($resultTotalVotes / $resultVoterCount) * 100)
             : 0;
@@ -84,7 +84,7 @@ class HomeController extends Controller
             ->withCount('votes')
             ->orderBy('start_time', 'desc')
             ->get();
-        $voterCount = User::query()->whereIn('role', ['guru', 'siswa'])->count();
+        $voterCount = User::query()->eligibleVoters()->count();
 
         return view('public.results', compact('elections', 'voterCount'));
     }

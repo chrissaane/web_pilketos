@@ -26,6 +26,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/history', [DashboardController::class, 'history'])->name('history');
     Route::post('/vote', [DashboardController::class, 'store'])->name('vote.store');
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

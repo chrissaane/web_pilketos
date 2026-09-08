@@ -24,7 +24,7 @@ test('admin can open voter index even when voting tokens table is missing', func
     $response->assertOk();
 });
 
-test('admin can see all voter records in the default semua filter', function () {
+test('admin sees only active voter records in the default semua filter', function () {
     $admin = User::factory()->create([
         'role' => 'admin',
         'identity_number' => 'ADMIN-001',
@@ -53,9 +53,73 @@ test('admin can see all voter records in the default semua filter', function () 
 
     $response->assertOk()
         ->assertSeeText('Siswa Aktif')
-        ->assertSeeText('Siswa Nonaktif')
-        ->assertSeeText('12')
-        ->assertSeeText('11');
+        ->assertDontSeeText('Siswa Nonaktif');
+});
+
+test('admin does not see students without a class in voter data', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'identity_number' => 'ADMIN-003',
+        'is_active' => true,
+    ]);
+
+    User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026003',
+        'name' => 'Siswa Tanpa Kelas',
+        'class_group' => null,
+        'is_active' => true,
+    ]);
+
+    User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026004',
+        'name' => 'Siswa Dengan Kelas',
+        'class_group' => '10',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin);
+
+    $response = $this->get(route('admin.voters.index'));
+
+    $response->assertOk()
+        ->assertSeeText('Siswa Dengan Kelas')
+        ->assertDontSeeText('Siswa Tanpa Kelas');
+});
+
+test('admin can filter voter data by class and major category', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'identity_number' => 'ADMIN-004',
+        'is_active' => true,
+    ]);
+
+    User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026012',
+        'name' => 'Siswa XII TO 1',
+        'class_group' => '12',
+        'major' => 'TO 1',
+        'is_active' => true,
+    ]);
+
+    User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026013',
+        'name' => 'Siswa XII TO 2',
+        'class_group' => '12',
+        'major' => 'TO 2',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin);
+
+    $response = $this->get(route('admin.voters.index', ['filter' => 'kelas_12_to_1']));
+
+    $response->assertOk()
+        ->assertSeeText('Siswa XII TO 1')
+        ->assertDontSeeText('Siswa XII TO 2');
 });
 
 test('sipintu sync keeps class data when the payload uses an alternate class field name', function () {

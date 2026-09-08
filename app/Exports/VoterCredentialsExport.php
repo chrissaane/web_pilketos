@@ -70,7 +70,7 @@ class VoterCredentialsExport
     {
         $activeElection = Election::where('status', Election::STATUS_ACTIVE)->first();
 
-        $query = User::where('is_active', true);
+        $query = User::eligibleVoters();
 
         if ($this->filter === 'guru') {
             $query->where('role', 'guru');
@@ -83,7 +83,21 @@ class VoterCredentialsExport
 
         $rows = [['NIS/NIP', 'Password', 'Token']];
 
-        foreach ($query->get() as $voter) {
+        $voters = $query->get()->sort(function ($firstVoter, $secondVoter) {
+            $firstIdentity = trim((string) ($firstVoter->identity_number ?? ''));
+            $secondIdentity = trim((string) ($secondVoter->identity_number ?? ''));
+
+            if ($firstIdentity === '' || $secondIdentity === '') {
+                return $firstIdentity === '' ? ($secondIdentity === '' ? 0 : 1) : -1;
+            }
+
+            return strnatcasecmp(
+                $firstIdentity,
+                $secondIdentity
+            );
+        });
+
+        foreach ($voters as $voter) {
             $token = $this->resolveToken($voter->id, $activeElection);
 
             $rows[] = [

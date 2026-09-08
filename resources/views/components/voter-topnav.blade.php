@@ -9,7 +9,7 @@
         <div>
             <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Portal Pemilih</p>
             <h1 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                {{ Auth::user()->role === 'guru' ? 'Dashboard Guru' : 'Dashboard Siswa' }}
+                {{ request()->routeIs('history') ? 'History Pemilihan' : (Auth::user()->role === 'guru' ? 'Dashboard Guru' : 'Dashboard Siswa') }}
             </h1>
         </div>
     </div>

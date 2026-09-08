@@ -790,7 +790,7 @@ $watch('theme', value => {
     @stack('styles')
 </head>
 
-@php($isVoterDashboard = request()->routeIs('siswa.dashboard', 'guru.dashboard'))
+@php($isVoterDashboard = request()->routeIs('siswa.dashboard', 'guru.dashboard', 'history'))
 
 <body
     class="min-h-screen bg-slate-50 text-slate-800 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 {{ $isVoterDashboard ? 'flex flex-col lg:flex-row' : '' }}">

@@ -1027,10 +1027,10 @@
 
 <body x-data="layout()" x-init="init()" :class="{ 'dark': dark }"
     class="admin-panel bg-slate-100 min-h-screen text-slate-800 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
-    <div class="admin-frame flex min-h-screen bg-slate-100 dark:bg-slate-950">
+    <div class="admin-frame flex min-h-screen min-w-0 overflow-x-hidden bg-slate-100 dark:bg-slate-950">
         <!-- Desktop sidebar -->
         <aside
-            class="admin-sidebar hidden lg:flex lg:flex-col w-72 bg-white border-r border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700">
+            class="admin-sidebar fixed inset-y-0 left-0 z-30 hidden h-screen max-h-screen w-72 shrink-0 overflow-hidden lg:flex lg:flex-col bg-white border-r border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700">
             @include('components.sidebar')
         </aside>
 
@@ -1046,13 +1046,13 @@
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col" :class="{ 'overflow-hidden': openSidebar }">
+        <div class="flex min-w-0 flex-1 flex-col lg:ml-72" :class="{ 'overflow-hidden': openSidebar }">
             <div class="admin-topnav">
                 @include('components.topnav')
             </div>
 
-            <main class="admin-content p-6 overflow-auto">
-                <div class="max-w-7xl mx-auto">
+            <main class="admin-content min-w-0 overflow-x-hidden overflow-y-auto p-6">
+                <div class="mx-auto max-w-7xl min-w-0">
                     @yield('content')
                 </div>
             </main>
