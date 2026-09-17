@@ -7,9 +7,11 @@ use App\Http\Requests\CandidateRequest;
 use App\Models\Candidate;
 use App\Models\Election;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
 
 class CandidateController extends Controller
@@ -31,12 +33,12 @@ class CandidateController extends Controller
             $selectedBanner = $electionId ? Election::find($electionId) : null;
         } catch (\Exception $e) {
             // If DB is down, avoid throwing and show an empty list with a warning
-            logger()->error('Candidate index failed: ' . $e->getMessage());
+            logger()->error('Candidate index failed: '.$e->getMessage());
             $banners = collect([]);
             $selectedBanner = null;
 
-            $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12, 1, [
-                'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+            $paginator = new LengthAwarePaginator([], 0, 12, 1, [
+                'path' => Paginator::resolveCurrentPath(),
             ]);
 
             return view('admin.candidates.index', ['candidates' => $paginator, 'banners' => $banners, 'selectedBanner' => $selectedBanner])
@@ -52,9 +54,10 @@ class CandidateController extends Controller
             $banners = Election::withCount('candidates')->orderBy('title')->get();
             $selectedBanner = $request->query('election_id') ? Election::find($request->query('election_id')) : null;
         } catch (\Exception $e) {
-            logger()->error('Candidate create failed: ' . $e->getMessage());
+            logger()->error('Candidate create failed: '.$e->getMessage());
             $banners = collect([]);
             $selectedBanner = null;
+
             return redirect()->route('admin.candidates.index')->with('error', 'Koneksi database gagal. Coba lagi nanti.');
         }
 
@@ -87,7 +90,8 @@ class CandidateController extends Controller
         try {
             $candidate->load('election');
         } catch (\Exception $e) {
-            logger()->error('Candidate show failed: ' . $e->getMessage());
+            logger()->error('Candidate show failed: '.$e->getMessage());
+
             return redirect()->route('admin.candidates.index')->with('error', 'Gagal mengambil data kandidat.');
         }
 
@@ -99,7 +103,8 @@ class CandidateController extends Controller
         try {
             $banners = Election::withCount('candidates')->orderBy('title')->get();
         } catch (\Exception $e) {
-            logger()->error('Candidate edit failed: ' . $e->getMessage());
+            logger()->error('Candidate edit failed: '.$e->getMessage());
+
             return redirect()->route('admin.cards.index')->with('error', 'Gagal mengambil data kandidat.');
         }
 

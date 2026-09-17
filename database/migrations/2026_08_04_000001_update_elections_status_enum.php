@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::table('elections', function (Blueprint $table) {
             $table->enum('status', ['Akan Datang', 'Sedang Berlangsung', 'Telah Berakhir'])
-                  ->default('Akan Datang')
-                  ->change();
+                ->default('Akan Datang')
+                ->change();
         });
     }
 
@@ -19,8 +19,8 @@ return new class extends Migration
     {
         Schema::table('elections', function (Blueprint $table) {
             $table->enum('status', ['Sedang Berlangsung', 'Telah Berakhir'])
-                  ->default('Sedang Berlangsung')
-                  ->change();
+                ->default('Sedang Berlangsung')
+                ->change();
         });
     }
 };

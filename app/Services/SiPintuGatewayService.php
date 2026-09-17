@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -405,12 +406,14 @@ class SiPintuGatewayService
                     foreach ($chunk as $userData) {
                         if (! is_array($userData)) {
                             $failedCount++;
+
                             continue;
                         }
 
                         $identityNumber = $this->extractIdentityNumber($userData);
                         if (blank($identityNumber)) {
                             $failedCount++;
+
                             continue;
                         }
 
@@ -705,7 +708,7 @@ class SiPintuGatewayService
         return $msg ?: 'Terjadi kesalahan pada koneksi jaringan ke server SiPintu.';
     }
 
-    protected function humanizeResponseError(\Illuminate\Http\Client\Response $response, string $url): string
+    protected function humanizeResponseError(Response $response, string $url): string
     {
         $status = $response->status();
         $body = $response->json();
@@ -1165,11 +1168,11 @@ class SiPintuGatewayService
 
         // Fallback khusus guru tanpa NIP (misal nip = 0 / kosong): gunakan kode guru atau id
         if (! empty($value['kode'])) {
-            return 'GURU-' . trim((string) $value['kode']);
+            return 'GURU-'.trim((string) $value['kode']);
         }
 
         if (! empty($value['id']) && (string) $value['id'] !== '0') {
-            return 'GURU-' . trim((string) $value['id']);
+            return 'GURU-'.trim((string) $value['id']);
         }
 
         return null;

@@ -4,14 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\VoterCredentialsExport;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Election;
+use App\Models\User;
 use App\Models\Vote;
 use App\Models\VotingToken;
+use App\Services\SiPintuGatewayService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class VoterController extends Controller
@@ -22,7 +23,7 @@ class VoterController extends Controller
         @ini_set('memory_limit', '512M');
 
         try {
-            $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
+            $result = app(SiPintuGatewayService::class)->syncAllUsersFromGateway();
             $isSuccess = (bool) ($result['success'] ?? false);
             $count = (int) ($result['total'] ?? 0);
             $newCount = (int) ($result['new_count'] ?? 0);
@@ -127,9 +128,9 @@ class VoterController extends Controller
 
         $voters = User::query()
             ->eligibleVoters()
-            ->when($selectedFilter === 'guru', fn($q) => $q->where('role', 'guru'))
-            ->when($selectedFilter === 'karyawan', fn($q) => $q->where('role', 'karyawan'))
-            ->when($selectedFilter === 'semua', fn($q) => $q->where(function ($roleQuery) {
+            ->when($selectedFilter === 'guru', fn ($q) => $q->where('role', 'guru'))
+            ->when($selectedFilter === 'karyawan', fn ($q) => $q->where('role', 'karyawan'))
+            ->when($selectedFilter === 'semua', fn ($q) => $q->where(function ($roleQuery) {
                 $roleQuery->whereIn('role', ['guru', 'karyawan'])
                     ->orWhere(function ($studentQuery) {
                         $studentQuery->where('role', 'siswa')->where('is_active', true);
@@ -323,13 +324,13 @@ class VoterController extends Controller
                 default => trim((string) $classGroup),
             };
 
-        $label = blank($normalizedClass) ? 'Kelas' : 'Kelas ' . $normalizedClass;
+        $label = blank($normalizedClass) ? 'Kelas' : 'Kelas '.$normalizedClass;
 
         if (blank($major)) {
             return $normalizedClass ? $label : 'N/A';
         }
 
-        return trim($label . ' ' . $major);
+        return trim($label.' '.$major);
     }
 
     public function export(Request $request)
@@ -489,7 +490,8 @@ class VoterController extends Controller
             return redirect()->route('admin.voters.index')->with('success', sprintf('Proses kenaikan kelas selesai. Naik: %d (X→XI), %d (XI→XII). Alumni diproses: %d', $promoted10, $promoted11, $graduated));
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Gagal memproses kenaikan kelas: ' . $e->getMessage()]);
+
+            return back()->withErrors(['error' => 'Gagal memproses kenaikan kelas: '.$e->getMessage()]);
         }
     }
 
@@ -503,7 +505,8 @@ class VoterController extends Controller
             return redirect()->route('admin.voters.index')->with('success', sprintf('Arsip Kelas XII selesai. %d siswa dipindahkan ke Alumni (nonaktif).', $archived));
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Gagal mengarsipkan kelas XII: ' . $e->getMessage()]);
+
+            return back()->withErrors(['error' => 'Gagal mengarsipkan kelas XII: '.$e->getMessage()]);
         }
     }
 
@@ -520,7 +523,7 @@ class VoterController extends Controller
             }
 
             foreach ($elections as $election) {
-                \App\Models\Election::generateTokensForElection($election, $force);
+                Election::generateTokensForElection($election, $force);
             }
 
             return redirect()->route('admin.voters.index')->with('success', 'Token berhasil dibuat untuk semua card yang belum berakhir.');
@@ -530,20 +533,20 @@ class VoterController extends Controller
 
         $election = null;
         if ($electionId) {
-            $election = \App\Models\Election::find($electionId);
+            $election = Election::find($electionId);
         }
 
         if (! $election) {
             // prefer active election, fall back to latest
-            $election = \App\Models\Election::where('start_time', '<=', now())->where('end_time', '>=', now())->latest('start_time')->first()
-                ?? \App\Models\Election::latest('start_time')->first();
+            $election = Election::where('start_time', '<=', now())->where('end_time', '>=', now())->latest('start_time')->first()
+                ?? Election::latest('start_time')->first();
         }
 
         if (! $election) {
             return back()->withErrors(['error' => 'Tidak ada periode pemilihan yang ditemukan.']);
         }
 
-        \App\Models\Election::generateTokensForElection($election, $force);
+        Election::generateTokensForElection($election, $force);
 
         return redirect()->route('admin.voters.index')->with('success', "Token berhasil dibuat untuk periode {$election->title}.");
     }

@@ -3,11 +3,11 @@
 namespace App\Imports;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -18,9 +18,13 @@ class VoterImport implements ToCollection, WithHeadingRow
     use Importable;
 
     public array $previewRows = [];
+
     public array $errors = [];
+
     public int $added = 0;
+
     public int $updated = 0;
+
     public int $totalRows = 0;
 
     public function __construct(private bool $preview = false)
@@ -55,6 +59,7 @@ class VoterImport implements ToCollection, WithHeadingRow
 
             if ($this->preview) {
                 $this->previewRows[] = $parsed;
+
                 continue;
             }
 
@@ -277,6 +282,7 @@ class VoterImport implements ToCollection, WithHeadingRow
         if (is_numeric($value)) {
             try {
                 $timestamp = ExcelDate::excelToTimestamp((float) $value);
+
                 return Carbon::createFromTimestamp($timestamp)->format('Y-m-d');
             } catch (\Throwable) {
                 // fall back to regular parsing below

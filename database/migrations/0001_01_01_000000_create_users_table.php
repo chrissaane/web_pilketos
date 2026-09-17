@@ -7,23 +7,23 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-{
-    Schema::create('users', function (Blueprint $table) {
-        $table->id();
-        $table->enum('role', ['admin', 'guru', 'siswa'])->default('siswa');
-        $table->string('identity_number')->unique()->comment('NIS untuk Siswa, NIP untuk Guru, Username untuk Admin');
-        $table->string('name');
-        $table->string('email')->unique()->nullable();
-        $table->timestamp('email_verified_at')->nullable();
-        $table->string('password');
-        $table->string('class_group')->nullable()->comment('Contoh: X, XI, XII');
-        $table->string('major')->nullable()->comment('Contoh: PPLG 1, MPLB 2');
-        $table->date('birth_date')->nullable()->comment('Digunakan untuk default password siswa/guru');
-        $table->string('phone')->nullable();
-        $table->boolean('is_active')->default(true);
-        $table->rememberToken();
-        $table->timestamps();
-    });
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->enum('role', ['admin', 'guru', 'siswa'])->default('siswa');
+            $table->string('identity_number')->unique()->comment('NIS untuk Siswa, NIP untuk Guru, Username untuk Admin');
+            $table->string('name');
+            $table->string('email')->unique()->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->string('class_group')->nullable()->comment('Contoh: X, XI, XII');
+            $table->string('major')->nullable()->comment('Contoh: PPLG 1, MPLB 2');
+            $table->date('birth_date')->nullable()->comment('Digunakan untuk default password siswa/guru');
+            $table->string('phone')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->rememberToken();
+            $table->timestamps();
+        });
 
         // 2. Tabel Password Reset Tokens
         Schema::create('password_reset_tokens', function (Blueprint $table) {

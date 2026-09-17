@@ -61,7 +61,7 @@ class ImportController extends Controller
                         'updated' => $import->updated,
                         'total' => $import->totalRows,
                     ],
-                ])->withErrors(['file' => 'Gagal mengimpor file Excel: ' . $exception->getMessage()]);
+                ])->withErrors(['file' => 'Gagal mengimpor file Excel: '.$exception->getMessage()]);
             }
         }
 
@@ -97,7 +97,7 @@ class ImportController extends Controller
                     Storage::disk('local')->delete($tempPath);
                 }
 
-                return back()->withErrors(['file' => 'Gagal mengimpor file Excel: ' . $exception->getMessage()]);
+                return back()->withErrors(['file' => 'Gagal mengimpor file Excel: '.$exception->getMessage()]);
             }
         }
 
@@ -121,7 +121,7 @@ class ImportController extends Controller
                     'updated' => 0,
                     'total' => 0,
                 ],
-            ])->withErrors(['file' => 'Tidak dapat membaca file Excel: ' . $exception->getMessage()]);
+            ])->withErrors(['file' => 'Tidak dapat membaca file Excel: '.$exception->getMessage()]);
         }
 
         return view('admin.imports.index', [

@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\AboutPage;
-use App\Models\GuideItem;
 use App\Models\Election;
+use App\Models\GuideItem;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -163,7 +163,7 @@ class AdminSettingsController extends Controller
                 continue;
             }
 
-            $newKey = 'custom_' . (Str::slug($title) ?: 'section_' . ($index + 1));
+            $newKey = 'custom_'.(Str::slug($title) ?: 'section_'.($index + 1));
             if ($newKey !== $oldKey) {
                 AboutPage::where('section', $oldKey)->delete();
             }

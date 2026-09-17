@@ -9,6 +9,7 @@ use App\Models\Election;
 use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\Vote;
+use App\Models\VotingToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +122,8 @@ class DashboardController extends Controller
                 ->get();
             $totalVotes = $candidates->sum('votes_count');
             $candidates = $candidates->map(function ($candidate) use ($totalVotes) {
-                $percent = $totalVotes > 0 ? number_format(($candidate->votes_count / $totalVotes) * 100, 0) . '%' : '0%';
+                $percent = $totalVotes > 0 ? number_format(($candidate->votes_count / $totalVotes) * 100, 0).'%' : '0%';
+
                 return (object) [
                     'id' => $candidate->id,
                     'name' => $candidate->name,
@@ -132,7 +134,7 @@ class DashboardController extends Controller
             });
         }
 
-        $activities = \App\Models\ActivityLog::query()
+        $activities = ActivityLog::query()
             ->with('user')
             ->latest()
             ->limit(5)
@@ -185,7 +187,7 @@ class DashboardController extends Controller
             'voters' => $voterCount,
             'voted' => $selectedElectionVotes,
             'not_voted' => $notVotedCount,
-            'progress' => $progressPercent . '%',
+            'progress' => $progressPercent.'%',
             'progress_percent' => $progressPercent,
             'online' => $onlineCount,
             'active_ratio' => $totalElections > 0 ? round(($activeElections / $totalElections) * 100) : 0,
@@ -354,7 +356,7 @@ class DashboardController extends Controller
         // Verify voting token (normalize input)
         $tokenInput = $request->input('token');
         $tokenNormalized = strtoupper(trim((string) $tokenInput));
-        $votingToken = \App\Models\VotingToken::query()
+        $votingToken = VotingToken::query()
             ->where('token', $tokenNormalized)
             ->where('user_id', $user->id)
             ->where('election_id', $election->id)

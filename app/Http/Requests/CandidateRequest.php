@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Candidate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\Candidate;
 
 class CandidateRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class CandidateRequest extends FormRequest
 
         $photoRule = $this->isMethod('post')
             ? ['required', 'array', 'min:1', 'max:5']
-            : ['nullable', 'array', 'max:' . max(0, 5 - max(0, $existingPhotoCount - $deletePhotoCount))];
+            : ['nullable', 'array', 'max:'.max(0, 5 - max(0, $existingPhotoCount - $deletePhotoCount))];
 
         return [
             'election_id' => ['required', 'exists:elections,id'],

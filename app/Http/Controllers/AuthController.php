@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function __construct(protected SiPintuGatewayService $sipintuGateway)
-    {
-    }
+    public function __construct(protected SiPintuGatewayService $sipintuGateway) {}
 
     public function showLoginForm()
     {

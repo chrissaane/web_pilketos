@@ -11,6 +11,7 @@ class ScheduleController extends Controller
     public function index()
     {
         $schedules = VotingSchedule::orderBy('time')->get();
+
         return view('admin.schedules.index', compact('schedules'));
     }
 

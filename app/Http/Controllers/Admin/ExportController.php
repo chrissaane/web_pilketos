@@ -15,6 +15,6 @@ class ExportController extends Controller
     public function run(Request $request)
     {
         // Stub: implement real export logic later
-        return redirect()->route('admin.export.index')->with('success','Export started (stub).');
+        return redirect()->route('admin.export.index')->with('success', 'Export started (stub).');
     }
 }

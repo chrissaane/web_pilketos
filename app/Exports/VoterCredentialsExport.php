@@ -167,7 +167,7 @@ class VoterCredentialsExport
 
     private function sheetXml(array $rows): string
     {
-        $writer = new \XMLWriter();
+        $writer = new \XMLWriter;
         $writer->openMemory();
         $writer->startDocument('1.0', 'UTF-8');
         $writer->startElement('worksheet');

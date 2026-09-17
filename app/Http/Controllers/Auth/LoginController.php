@@ -13,6 +13,7 @@ class LoginController extends Controller
         if (Auth::check()) {
             return $this->redirectUserByRole(Auth::user());
         }
+
         return view('auth.login');
     }
 
@@ -37,12 +38,13 @@ class LoginController extends Controller
             $request->session()->regenerate();
             $user = Auth::user();
 
-            if (!$user->is_active) {
+            if (! $user->is_active) {
                 Auth::logout();
+
                 return back()->withErrors(['login' => 'Akun Anda telah dinonaktifkan. Silakan hubungi Admin.']);
             }
 
-            return $this->redirectUserByRole($user)->with('success', 'Selamat datang kembali, ' . $user->name);
+            return $this->redirectUserByRole($user)->with('success', 'Selamat datang kembali, '.$user->name);
         }
 
         return back()->withErrors([

@@ -3,20 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use App\Models\VotingToken;
-use App\Models\User;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Election extends Model
 {
     public const STATUS_UPCOMING = 'Akan Datang';
+
     public const STATUS_ACTIVE = 'Sedang Berlangsung';
+
     public const STATUS_FINISHED = 'Telah Berakhir';
 
     protected $fillable = [
@@ -80,6 +80,7 @@ class Election extends Model
 
         return self::STATUS_FINISHED;
     }
+
     public function getCurrentStatusAttribute(): string
     {
         if (blank($this->start_time) || blank($this->end_time)) {
@@ -112,7 +113,8 @@ class Election extends Model
     public static function generateTokensForElection(Election $election, bool $force = false): void
     {
         if (! Schema::hasTable('voting_tokens')) {
-            Log::warning('voting_tokens table does not exist; skipping token generation for election ' . $election->id);
+            Log::warning('voting_tokens table does not exist; skipping token generation for election '.$election->id);
+
             return;
         }
 
@@ -175,7 +177,7 @@ class Election extends Model
                 }
             });
         } catch (\Throwable $e) {
-            Log::error('Failed to auto-generate voting tokens for election ' . $election->id . ': ' . $e->getMessage());
+            Log::error('Failed to auto-generate voting tokens for election '.$election->id.': '.$e->getMessage());
         }
     }
 }

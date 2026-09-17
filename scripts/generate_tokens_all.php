@@ -1,13 +1,13 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Models\Election;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Contracts\Console\Kernel;
 
 echo "Starting token generation for all non-finished elections...\n";
 try {
@@ -20,7 +20,7 @@ try {
     }
     echo "Done. Processed {$count} elections.\n";
 } catch (Throwable $t) {
-    echo "Error: " . $t->getMessage() . "\n";
+    echo 'Error: '.$t->getMessage()."\n";
 }
 
 return 0;

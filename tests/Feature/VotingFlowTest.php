@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\User;
 use App\Models\Candidate;
 use App\Models\Election;
+use App\Models\User;
 use App\Models\VotingToken;
+use App\Services\SiPintuGatewayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -180,7 +181,7 @@ test('sipintu sync never overwrites local password with sipintu secret data', fu
         'is_active' => true,
     ]);
 
-    $updated = app(\App\Services\SiPintuGatewayService::class)->syncUserFromGateway([
+    $updated = app(SiPintuGatewayService::class)->syncUserFromGateway([
         'identity_number' => '20260555',
         'nama' => 'Rina Local',
         'email' => 'rina@local.test',
@@ -222,7 +223,7 @@ test('admin can update a voter password locally', function () {
 });
 
 test('sipintu sync keeps phone when payload uses alternate no hp field names', function () {
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
 
     $user = $gateway->syncUserFromGateway([
         'identity_number' => '20260123',
@@ -312,7 +313,7 @@ test('full sipintu user sync reads all users from generic api list', function ()
     config()->set('services.sipintu.client_id', 'app_all_users');
     config()->set('services.sipintu.client_secret', 'sec_all_users');
 
-    $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
+    $result = app(SiPintuGatewayService::class)->syncAllUsersFromGateway();
 
     expect($result['total'])->toBe(2)
         ->and(User::where('identity_number', '20261001')->exists())->toBeTrue()

@@ -12,7 +12,7 @@ class Candidate extends Model
     protected $fillable = [
         'election_id',
         'candidate_number',
-        'name',  
+        'name',
         'photo_path',
         'photo_paths',
         'class',

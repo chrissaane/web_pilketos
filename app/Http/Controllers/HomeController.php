@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AboutPage;
 use App\Models\Candidate;
 use App\Models\Election;
-use App\Models\GuideItem;
 use App\Models\SiteSetting;
 use App\Models\User;
+use App\Models\Vote;
+use App\Services\SiPintuGatewayService;
 use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
@@ -66,7 +66,7 @@ class HomeController extends Controller
         $user = auth()->user();
         $hasVoted = false;
         if ($user) {
-            $hasVoted = \App\Models\Vote::query()->where('election_id', $election->id)->where('user_id', $user->id)->exists();
+            $hasVoted = Vote::query()->where('election_id', $election->id)->where('user_id', $user->id)->exists();
         }
 
         return view('public.election-detail', compact('election', 'hasVoted'));
@@ -80,7 +80,7 @@ class HomeController extends Controller
         $user = auth()->user();
         $hasVoted = false;
         if ($user && $candidate->election) {
-            $hasVoted = \App\Models\Vote::query()->where('election_id', $candidate->election->id)->where('user_id', $user->id)->exists();
+            $hasVoted = Vote::query()->where('election_id', $candidate->election->id)->where('user_id', $user->id)->exists();
         }
 
         return view('public.candidate-detail', compact('candidate', 'hasVoted'));
@@ -156,7 +156,7 @@ class HomeController extends Controller
     public function syncSipintuData()
     {
         try {
-            $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
+            $result = app(SiPintuGatewayService::class)->syncAllUsersFromGateway();
             $isSuccess = (bool) ($result['success'] ?? false);
             $message = $result['message'] ?? ($isSuccess ? 'Sinkronisasi selesai.' : 'Sinkronisasi gagal.');
 

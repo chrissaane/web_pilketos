@@ -1,5 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CandidateController;
+use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\ImportController;
+use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\Settings\AdminSettingsController;
+use App\Http\Controllers\Admin\VoterController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
@@ -37,39 +44,39 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
         // Admin resource routes for management
-        Route::resource('cards', \App\Http\Controllers\Admin\BannerController::class);
-        Route::post('cards/{card}/publish', [\App\Http\Controllers\Admin\BannerController::class, 'publish'])
+        Route::resource('cards', BannerController::class);
+        Route::post('cards/{card}/publish', [BannerController::class, 'publish'])
             ->name('cards.publish');
-        Route::post('candidates/{candidate}/photos', [\App\Http\Controllers\Admin\CandidateController::class, 'destroyPhoto'])
+        Route::post('candidates/{candidate}/photos', [CandidateController::class, 'destroyPhoto'])
             ->name('candidates.photos.destroy');
-        Route::resource('candidates', \App\Http\Controllers\Admin\CandidateController::class);
-        Route::resource('schedules', \App\Http\Controllers\Admin\ScheduleController::class)->except(['show']);
-        Route::get('voters', [\App\Http\Controllers\Admin\VoterController::class, 'index'])->name('voters.index');
-        Route::delete('voters/{identity}', [\App\Http\Controllers\Admin\VoterController::class, 'destroy'])->name('voters.destroy');
-        Route::delete('voters/user/{user}', [\App\Http\Controllers\Admin\VoterController::class, 'destroyById'])->name('voters.destroy_by_id');
-        Route::put('voters/{identity}/password', [\App\Http\Controllers\Admin\VoterController::class, 'updatePassword'])->name('voters.password.update');
-        Route::post('voters/{identity}/regenerate-password', [\App\Http\Controllers\Admin\VoterController::class, 'regeneratePassword'])->name('voters.regenerate_password');
-        Route::post('voters/regenerate-passwords', [\App\Http\Controllers\Admin\VoterController::class, 'regeneratePasswordsForFilter'])->name('voters.regenerate_passwords');
-        Route::post('voters/sync', [\App\Http\Controllers\Admin\VoterController::class, 'syncFromSiPintu'])->name('voters.sync');
-        Route::get('voters/print', [\App\Http\Controllers\Admin\VoterController::class, 'print'])->name('voters.print');
-        Route::get('voters/export', [\App\Http\Controllers\Admin\VoterController::class, 'export'])->name('voters.export');
-        Route::post('voters/promote', [\App\Http\Controllers\Admin\VoterController::class, 'promote'])->name('voters.promote');
-        Route::post('voters/archive-xii', [\App\Http\Controllers\Admin\VoterController::class, 'archiveXii'])->name('voters.archive_xii');
+        Route::resource('candidates', CandidateController::class);
+        Route::resource('schedules', ScheduleController::class)->except(['show']);
+        Route::get('voters', [VoterController::class, 'index'])->name('voters.index');
+        Route::delete('voters/{identity}', [VoterController::class, 'destroy'])->name('voters.destroy');
+        Route::delete('voters/user/{user}', [VoterController::class, 'destroyById'])->name('voters.destroy_by_id');
+        Route::put('voters/{identity}/password', [VoterController::class, 'updatePassword'])->name('voters.password.update');
+        Route::post('voters/{identity}/regenerate-password', [VoterController::class, 'regeneratePassword'])->name('voters.regenerate_password');
+        Route::post('voters/regenerate-passwords', [VoterController::class, 'regeneratePasswordsForFilter'])->name('voters.regenerate_passwords');
+        Route::post('voters/sync', [VoterController::class, 'syncFromSiPintu'])->name('voters.sync');
+        Route::get('voters/print', [VoterController::class, 'print'])->name('voters.print');
+        Route::get('voters/export', [VoterController::class, 'export'])->name('voters.export');
+        Route::post('voters/promote', [VoterController::class, 'promote'])->name('voters.promote');
+        Route::post('voters/archive-xii', [VoterController::class, 'archiveXii'])->name('voters.archive_xii');
         Route::get('statistics', [DashboardController::class, 'adminStatistics'])->name('statistics.index');
         Route::get('statistics/data', [DashboardController::class, 'adminStatisticsData'])->name('statistics.data');
-        Route::post('statistics/results-visibility', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'storeResultsVisibility'])->name('statistics.results_visibility');
-        Route::get('settings', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'index'])->name('settings.index');
-        Route::post('settings', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'store'])->name('settings.store');
-        Route::post('settings/guide', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'storeGuide'])->name('settings.guide.store');
-        Route::delete('settings/guide/{guideItem}', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'destroyGuide'])->name('settings.guide.destroy');
-        Route::post('settings/about', [\App\Http\Controllers\Admin\Settings\AdminSettingsController::class, 'storeAbout'])->name('settings.about.store');
+        Route::post('statistics/results-visibility', [AdminSettingsController::class, 'storeResultsVisibility'])->name('statistics.results_visibility');
+        Route::get('settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::post('settings', [AdminSettingsController::class, 'store'])->name('settings.store');
+        Route::post('settings/guide', [AdminSettingsController::class, 'storeGuide'])->name('settings.guide.store');
+        Route::delete('settings/guide/{guideItem}', [AdminSettingsController::class, 'destroyGuide'])->name('settings.guide.destroy');
+        Route::post('settings/about', [AdminSettingsController::class, 'storeAbout'])->name('settings.about.store');
 
         // Import / Export stubs
-        Route::get('import', [\App\Http\Controllers\Admin\ImportController::class, 'index'])->name('import.index');
-        Route::post('import', [\App\Http\Controllers\Admin\ImportController::class, 'store'])->name('import.store');
-        Route::post('voters/generate-tokens', [\App\Http\Controllers\Admin\VoterController::class, 'generateTokens'])->name('voters.generate_tokens');
-        Route::get('export', [\App\Http\Controllers\Admin\ExportController::class, 'index'])->name('export.index');
-        Route::post('export', [\App\Http\Controllers\Admin\ExportController::class, 'run'])->name('export.run');
+        Route::get('import', [ImportController::class, 'index'])->name('import.index');
+        Route::post('import', [ImportController::class, 'store'])->name('import.store');
+        Route::post('voters/generate-tokens', [VoterController::class, 'generateTokens'])->name('voters.generate_tokens');
+        Route::get('export', [ExportController::class, 'index'])->name('export.index');
+        Route::post('export', [ExportController::class, 'run'])->name('export.run');
     });
 
     Route::middleware('role:guru,karyawan')->prefix('guru')->name('guru.')->group(function () {

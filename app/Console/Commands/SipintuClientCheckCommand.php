@@ -17,10 +17,10 @@ class SipintuClientCheckCommand extends Command
         $clientSecret = $this->option('secret') ?? config('services.sipintu.client_secret');
         $apiUrl = config('services.sipintu.api_url');
 
-        $this->info("Checking SiPintu Gateway Connection...");
+        $this->info('Checking SiPintu Gateway Connection...');
         $this->line("Target URL   : {$apiUrl}");
         $this->line("Client ID    : {$clientId}");
-        $this->line("Client Secret: " . ($clientSecret ? '********' : 'Not set'));
+        $this->line('Client Secret: '.($clientSecret ? '********' : 'Not set'));
 
         $pingResult = $sipintuService->ping();
 
@@ -37,7 +37,7 @@ class SipintuClientCheckCommand extends Command
             $this->info("\n[SUCCESS] Client Validation Response:");
             $this->line(json_encode($validateResult, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } else {
-            $this->warn("[WARNING] Client Validation failed or returned error.");
+            $this->warn('[WARNING] Client Validation failed or returned error.');
         }
 
         return Command::SUCCESS;

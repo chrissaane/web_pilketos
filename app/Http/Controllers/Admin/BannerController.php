@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BannerRequest;
 use App\Models\Election;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
@@ -40,8 +41,8 @@ class BannerController extends Controller
     public function store(BannerRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $data['start_time'] = $request->input('start_date') . ' ' . $request->input('start_time');
-        $data['end_time'] = $request->input('end_date') . ' ' . $request->input('end_time');
+        $data['start_time'] = $request->input('start_date').' '.$request->input('start_time');
+        $data['end_time'] = $request->input('end_date').' '.$request->input('end_time');
         $data['status'] = $this->computeStatus($data['start_time'], $data['end_time']);
         $data['is_published'] = $request->boolean('publish');
 
@@ -74,8 +75,8 @@ class BannerController extends Controller
     {
         $banner = $card;
         $data = $request->validated();
-        $data['start_time'] = $request->input('start_date') . ' ' . $request->input('start_time');
-        $data['end_time'] = $request->input('end_date') . ' ' . $request->input('end_time');
+        $data['start_time'] = $request->input('start_date').' '.$request->input('start_time');
+        $data['end_time'] = $request->input('end_date').' '.$request->input('end_time');
         $data['status'] = $this->computeStatus($data['start_time'], $data['end_time']);
         $data['is_published'] = $request->boolean('publish');
 
@@ -113,8 +114,8 @@ class BannerController extends Controller
 
     protected function computeStatus(string $startTime, string $endTime): string
     {
-        $start = \Illuminate\Support\Carbon::parse($startTime);
-        $end = \Illuminate\Support\Carbon::parse($endTime);
+        $start = Carbon::parse($startTime);
+        $end = Carbon::parse($endTime);
 
         if (now()->lt($start)) {
             return Election::STATUS_UPCOMING;

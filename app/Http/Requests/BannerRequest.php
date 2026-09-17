@@ -32,8 +32,8 @@ class BannerRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $start = trim((string) $this->input('start_date')) . ' ' . trim((string) $this->input('start_time'));
-        $end = trim((string) $this->input('end_date')) . ' ' . trim((string) $this->input('end_time'));
+        $start = trim((string) $this->input('start_date')).' '.trim((string) $this->input('start_time'));
+        $end = trim((string) $this->input('end_date')).' '.trim((string) $this->input('end_time'));
 
         if ($this->filled('start_date') && $this->filled('start_time') && $this->filled('end_date') && $this->filled('end_time')) {
             $this->merge([

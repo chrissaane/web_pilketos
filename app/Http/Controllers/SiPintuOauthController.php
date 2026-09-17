@@ -9,9 +9,7 @@ use Illuminate\Support\Str;
 
 class SiPintuOauthController extends Controller
 {
-    public function __construct(protected SiPintuGatewayService $sipintuGateway)
-    {
-    }
+    public function __construct(protected SiPintuGatewayService $sipintuGateway) {}
 
     public function redirect(Request $request)
     {

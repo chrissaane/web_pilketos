@@ -30,7 +30,7 @@ test('sync succeeds and processes large batch of students and teachers quickly',
     for ($i = 1; $i <= 10; $i++) {
         $mockTeachers[] = [
             'id' => $i,
-            'nip' => '19850101' . str_pad($i, 10, '0', STR_PAD_LEFT),
+            'nip' => '19850101'.str_pad($i, 10, '0', STR_PAD_LEFT),
             'nama' => "Guru {$i}, S.Pd",
             'user' => [
                 'id' => 200 + $i,

@@ -1,15 +1,20 @@
 <?php
 
+use App\Exports\VoterCredentialsExport;
+use App\Imports\VoterImport;
 use App\Models\Election;
 use App\Models\User;
-use App\Models\VotingToken;
+use App\Services\SiPintuGatewayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 uses(RefreshDatabase::class);
 
 test('import parser accepts simple excel columns without birth date', function () {
-    $import = new \App\Imports\VoterImport(true);
+    $import = new VoterImport(true);
 
     $import->collection(collect([
         [
@@ -44,7 +49,7 @@ test('direct import creates voter records without preview step', function () {
 
     $this->actingAs($admin);
 
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $spreadsheet = new Spreadsheet;
     $sheet = $spreadsheet->getActiveSheet();
     $sheet->fromArray([
         ['Nama', 'Kelas', 'NIS / NIP', 'Email'],
@@ -52,13 +57,13 @@ test('direct import creates voter records without preview step', function () {
         ['Ibu Sari', '', '19870001', 'sari@example.com'],
     ], null, 'A1');
 
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer = new Xlsx($spreadsheet);
     $tempFile = tempnam(sys_get_temp_dir(), 'voter_import_');
-    $xlsxPath = $tempFile . '.xlsx';
+    $xlsxPath = $tempFile.'.xlsx';
     unlink($tempFile);
     $writer->save($xlsxPath);
 
-    $file = new \Illuminate\Http\UploadedFile(
+    $file = new UploadedFile(
         $xlsxPath,
         'import_voters.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -217,7 +222,7 @@ test('admin can filter voter data by class and major category', function () {
 });
 
 test('sipintu sync keeps class data when the payload uses an alternate class field name', function () {
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
 
     $student = $gateway->syncUserFromGateway([
         'user' => [
@@ -269,7 +274,7 @@ test('sipintu sync keeps class data when the payload uses an alternate class fie
 });
 
 test('sipintu sync ignores placeholder values like N/A when populating class and major', function () {
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
 
     $student = $gateway->syncUserFromGateway([
         'user' => [
@@ -288,7 +293,7 @@ test('sipintu sync ignores placeholder values like N/A when populating class and
 });
 
 test('gateway flattens nested student and teacher payloads for full sync coverage', function () {
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
     $method = new ReflectionMethod($gateway, 'extractCollectionFromResponse');
     $method->setAccessible(true);
 
@@ -312,7 +317,7 @@ test('gateway flattens nested student and teacher payloads for full sync coverag
 });
 
 test('gateway accepts alternative siPintu identity keys when building the full user list', function () {
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
     $method = new ReflectionMethod($gateway, 'extractCollectionFromResponse');
     $method->setAccessible(true);
 
@@ -368,7 +373,7 @@ test('gateway imports all paginated siPintu students and teachers', function () 
         ], 200),
     ]);
 
-    $gateway = app(\App\Services\SiPintuGatewayService::class);
+    $gateway = app(SiPintuGatewayService::class);
     $result = $gateway->syncAllUsersFromGateway();
 
     expect($result['total'])->toBe(5)
@@ -412,7 +417,7 @@ test('admin can download voter credentials excel for the selected class and majo
         'status' => Election::STATUS_ACTIVE,
     ]);
 
-    $export = new \App\Exports\VoterCredentialsExport('kelas_12_pplg_1');
+    $export = new VoterCredentialsExport('kelas_12_pplg_1');
     $method = new ReflectionMethod($export, 'buildRows');
     $rows = $method->invoke($export);
 
