@@ -40,9 +40,9 @@
                 @csrf
 
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <!-- Banner Selection -->
+                    <!-- Card Selection -->
                     <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Banner</label>
+                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Card</label>
                         @if (isset($selectedBanner) && $selectedBanner)
                             <div
                                 class="mt-2 rounded-xl border border-slate-200 px-4 py-3 bg-slate-50 text-slate-700 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-300">
@@ -53,7 +53,7 @@
                             <select name="election_id"
                                 class="mt-2 w-full rounded-xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500 dark:bg-slate-900"
                                 required>
-                                <option value="" class="dark:bg-slate-900">Pilih Banner</option>
+                                <option value="" class="dark:bg-slate-900">Pilih Card</option>
                                 @foreach ($banners as $banner)
                                     <option value="{{ $banner->id }}" class="dark:bg-slate-900"
                                         {{ old('election_id') == $banner->id ? 'selected' : '' }}>
@@ -162,35 +162,6 @@
                         @enderror
                     </div>
 
-                    <!-- Motto -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Motto</label>
-                        <textarea name="motto" rows="2"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('motto') }}</textarea>
-                        @error('motto')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Prestasi -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Prestasi</label>
-                        <textarea name="achievements" rows="3"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('achievements') }}</textarea>
-                        @error('achievements')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Organisasi -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Organisasi</label>
-                        <textarea name="organizations" rows="3"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('organizations') }}</textarea>
-                        @error('organizations')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
                 </div>
 
                 <!-- Action Buttons -->

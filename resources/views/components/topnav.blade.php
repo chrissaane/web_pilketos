@@ -8,14 +8,13 @@
         </button>
 
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Portal Admin</p>
-            <h1 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">Dashboard Admin</h1>
+            <h1 class="text-lg font-bold text-slate-900 dark:text-white">Dashboard Admin</h1>
         </div>
     </div>
 
     <div class="flex items-center gap-3 text-right">
         <time class="hidden text-xs text-slate-500 dark:text-slate-400 sm:block"
-            x-text="new Date($root.time).toLocaleString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })"></time>
+            x-text="time.toLocaleString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })"></time>
         <div class="hidden h-8 w-px bg-slate-200 dark:bg-slate-800 sm:block"></div>
         <button type="button" x-on:click="toggleDark()"
             class="flex h-10 w-10 items-center justify-center border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"

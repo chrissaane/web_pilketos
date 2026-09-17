@@ -791,6 +791,7 @@ $watch('theme', value => {
 </head>
 
 @php($isVoterDashboard = request()->routeIs('siswa.dashboard', 'guru.dashboard', 'history'))
+@php($isLoginPage = request()->routeIs('login'))
 
 <body
     class="min-h-screen bg-slate-50 text-slate-800 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 {{ $isVoterDashboard ? 'flex flex-col lg:flex-row' : '' }}">
@@ -851,7 +852,7 @@ $watch('theme', value => {
                             </a>
                         @else
                             <a href="{{ route('dashboard') }}"
-                                class="site-role hidden rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase text-blue-600 transition hover:border-blue-400 hover:bg-blue-100 sm:inline-flex dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/70"
+                                class="site-role hidden rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold uppercase text-blue-600 transition hover:border-blue-400 hover:bg-blue-100 sm:inline-flex dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/70"
                                 aria-label="Buka dashboard {{ Auth::user()->role }}">
                                 {{ Auth::user()->role }}
                             </a>
@@ -894,8 +895,8 @@ $watch('theme', value => {
                         class="rounded-2xl px-3 py-2 transition text-slate-600 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400">Tentang</a>
                     @auth
                         <a href="{{ route('dashboard') }}" x-on:click="mobileMenu = false"
-                            class="rounded-2xl bg-blue-50 px-3 py-2 font-semibold text-blue-600 transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/70">
-                            Dashboard {{ Auth::user()->role }}
+                            class="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold uppercase text-blue-600 transition hover:border-blue-400 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/70">
+                            {{ Auth::user()->role }}
                         </a>
                         <form action="{{ route('logout') }}" method="POST" class="logout-confirm-form">
                             @csrf
@@ -918,7 +919,7 @@ $watch('theme', value => {
         </div>
     @endif
 
-    @unless ($isVoterDashboard)
+    @unless ($isVoterDashboard || $isLoginPage)
         <footer class="site-footer border-t border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
             <div class="footer-inner">
                 <div class="footer-grid">

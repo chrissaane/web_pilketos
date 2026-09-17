@@ -41,12 +41,15 @@ class AuthController extends Controller
         if ($user) {
             $matched = false;
             foreach ($this->getPasswordCandidates($password) as $candidate) {
-                if (Hash::check($candidate, $user->password) || $candidate === $user->password) {
+                if (Hash::check($candidate, $user->password)) {
                     $matched = true;
-                    if ($candidate === $user->password) {
-                        $user->password = Hash::make($candidate);
-                        $user->save();
-                    }
+                    break;
+                }
+
+                if ($candidate === $user->password) {
+                    $user->forceFill(['password' => Hash::make($candidate)]);
+                    $user->save();
+                    $matched = true;
                     break;
                 }
             }
@@ -111,6 +114,7 @@ class AuthController extends Controller
         return match ($user->role) {
             'admin' => route('admin.dashboard'),
             'guru' => route('guru.dashboard'),
+            'karyawan' => route('guru.dashboard'),
             'siswa' => route('siswa.dashboard'),
             default => route('home'),
         };

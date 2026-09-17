@@ -145,29 +145,25 @@
                         <h1 class="profile-title">{{ $candidate->name }}</h1>
                         <p class="profile-muted mt-3">{{ $candidate->class }} - {{ $candidate->major }}</p>
                         <div class="mt-8 grid gap-6 md:grid-cols-2">
-                            <div class="profile-info p-6">
-                                <h2 class="text-xl font-bold">Biodata</h2>
-                                <p>{{ $candidate->biodata }}</p>
-                            </div>
-                            <div class="profile-info p-6">
-                                <h2 class="text-xl font-bold">Visi</h2>
-                                <p>{{ $candidate->vision }}</p>
-                            </div>
+                            @if (filled($candidate->biodata))
+                                <div class="profile-info p-6">
+                                    <h2 class="text-xl font-bold">Biodata</h2>
+                                    <p class="whitespace-pre-line">{{ $candidate->biodata }}</p>
+                                </div>
+                            @endif
+                            @if (filled($candidate->vision))
+                                <div class="profile-info p-6">
+                                    <h2 class="text-xl font-bold">Visi</h2>
+                                    <p class="whitespace-pre-line">{{ $candidate->vision }}</p>
+                                </div>
+                            @endif
                         </div>
-                        <div class="mt-6 grid gap-6 md:grid-cols-2">
-                            <div class="profile-info p-6">
-                                <h2 class="text-xl font-bold">Motto</h2>
-                                <p>{{ $candidate->motto }}</p>
+                        @if (filled($candidate->mission))
+                            <div class="profile-info mt-6 p-6">
+                                <h2 class="text-xl font-bold">Misi</h2>
+                                <p class="whitespace-pre-line">{{ $candidate->mission }}</p>
                             </div>
-                            <div class="profile-info p-6">
-                                <h2 class="text-xl font-bold">Prestasi</h2>
-                                <p>{{ $candidate->achievements }}</p>
-                            </div>
-                        </div>
-                        <div class="profile-info mt-6 p-6">
-                            <h2 class="text-xl font-bold">Misi</h2>
-                            <p>{{ $candidate->mission }}</p>
-                        </div>
+                        @endif
                         @auth
                             @if ($candidate->election && $candidate->election->current_status === \App\Models\Election::STATUS_ACTIVE && !$hasVoted)
                                 <div class="mt-8">
@@ -259,7 +255,16 @@
                         })
                     });
 
-                    const data = await res.json();
+                    const responseText = await res.text();
+                    let data = {};
+
+                    try {
+                        data = responseText ? JSON.parse(responseText) : {};
+                    } catch (parseError) {
+                        throw new Error(
+                            'Server mengembalikan respons yang tidak valid. Silakan coba lagi.');
+                    }
+
                     if (res.ok && data.success) {
                         await Swal.fire({
                             title: 'Berhasil',

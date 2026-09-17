@@ -271,19 +271,24 @@
                     <span
                         class="candidate-status px-3 py-2 {{ $election->current_status === \App\Models\Election::STATUS_ACTIVE ? '' : 'opacity-70' }}">{{ $election->current_status }}</span>
                 </div>
-                <div class="mt-8 grid gap-6 md:grid-cols-3">
-                    <div class="candidate-metric rounded-2xl p-5">
-                        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Tahun</p>
-                        <p class="mt-2 text-xl font-black">{{ $election->year }}</p>
+                <div class="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)]">
+                    <div class="max-w-2xl">
+                        @if ($election->description)
+                            <p class="candidate-muted text-sm leading-relaxed">{{ $election->description }}</p>
+                        @endif
                     </div>
                     <div class="candidate-metric rounded-2xl p-5">
-                        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Suara</p>
-                        <p class="mt-2 text-xl font-black">{{ $election->votes->count() }}</p>
-                    </div>
-                    <div class="candidate-metric rounded-2xl p-5">
-                        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Mulai - Selesai</p>
-                        <p class="mt-2 text-xl font-black">{{ $election->start_time->translatedFormat('d M Y') }} -
-                            {{ $election->end_time->translatedFormat('d M Y') }}</p>
+                        <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Jadwal Pemilihan</p>
+                        <div class="mt-3 space-y-2 text-sm">
+                            <div class="flex flex-wrap justify-between gap-2">
+                                <span class="candidate-muted">Mulai</span>
+                                <strong>{{ $election->start_time->translatedFormat('d M Y, H:i') }}</strong>
+                            </div>
+                            <div class="flex flex-wrap justify-between gap-2">
+                                <span class="candidate-muted">Selesai</span>
+                                <strong>{{ $election->end_time->translatedFormat('d M Y, H:i') }}</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -330,6 +335,9 @@
                                                 class="candidate-action candidate-vote-action px-4 py-2">Pilih
                                                 Kandidat</button>
                                         @endauth
+                                    @elseif ($election->current_status === \App\Models\Election::STATUS_UPCOMING)
+                                        <button type="button" disabled
+                                            class="candidate-action candidate-disabled px-4 py-2">Akan Datang</button>
                                     @else
                                         <button type="button" disabled
                                             class="candidate-action candidate-disabled px-4 py-2">Pemilihan
@@ -395,7 +403,14 @@
                     body: JSON.stringify(payload)
                 });
 
-                const data = await res.json();
+                const responseText = await res.text();
+                let data = {};
+
+                try {
+                    data = responseText ? JSON.parse(responseText) : {};
+                } catch (parseError) {
+                    throw new Error('Server mengembalikan respons yang tidak valid. Silakan coba lagi.');
+                }
 
                 if (!res.ok) {
                     throw new Error(data.message || 'Terjadi kesalahan');

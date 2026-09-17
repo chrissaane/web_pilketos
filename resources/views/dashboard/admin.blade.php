@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="admin-dashboard space-y-6">
-        <section class="admin-intro-grid grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <section class="admin-intro-grid">
             <div
                 class="admin-hero rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/40 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:shadow-slate-950/40">
                 <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -24,22 +24,6 @@
                 </div>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                <div
-                    class="admin-summary-panel border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Status Pemilihan</p>
-                    <p class="mt-4 text-xl font-bold text-slate-900 dark:text-white">{{ $votingStatus ?? 'Belum Aktif' }}
-                    </p>
-                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Pantau status periode pemilihan yang sedang
-                        dikelola.</p>
-                </div>
-                <div class="admin-summary-panel border border-slate-200 bg-white p-5 dark:border-slate-900">
-                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Partisipasi</p>
-                    <p class="mt-4 text-3xl font-bold text-slate-900 dark:text-white">{{ $stats['progress'] ?? '0%' }}</p>
-                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ $stats['voted'] ?? 0 }} dari
-                        {{ $stats['voters'] ?? 0 }} pemilih sudah memilih.</p>
-                </div>
-            </div>
         </section>
 
         <section class="grid gap-4 lg:grid-cols-5">
@@ -176,104 +160,7 @@
                         <div class="mt-3 text-2xl font-black text-slate-900 dark:text-slate-100">{{ $guruCount ?? 0 }}
                         </div>
                     </div>
-                    <div class="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
-                        <div class="text-sm text-slate-500 dark:text-slate-400">Partisipasi Pemilih</div>
-                        <div class="mt-3 text-xl font-semibold text-emerald-600">{{ $stats['progress'] ?? '0%' }}</div>
-                    </div>
                 </div>
-            </div>
-        </section>
-
-        <section class="grid gap-4">
-            <div
-                class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h3 class="text-xl font-black text-slate-900 dark:text-slate-100">Turnout per Kelas</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Persentase suara berdasarkan kelas.</p>
-                    </div>
-                </div>
-                <div class="mt-6 grid gap-4 sm:grid-cols-3">
-                    @forelse($turnoutGroups ?? [] as $group)
-                        <div class="rounded-[24px] bg-slate-50 p-5 text-center dark:bg-slate-900">
-                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ $group->group }}</p>
-                            <p class="mt-3 text-3xl font-black text-blue-800">{{ $group->percent }}%</p>
-                            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ $group->votes }} /
-                                {{ $group->total }} Votes</p>
-                        </div>
-                    @empty
-                        <div class="rounded-[24px] bg-slate-50 p-5 text-center dark:bg-slate-900">
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Tidak ada data kelas</p>
-                            <p class="mt-3 text-3xl font-black text-blue-800">0%</p>
-                            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">0 / 0 Votes</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            {{-- <div
-                class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-black text-slate-900 dark:text-slate-100">System Logs</h3>
-                    <a href="#" class="text-sm font-semibold text-blue-600 dark:text-blue-400">Lihat Semua</a>
-                </div>
-                <div class="mt-5 overflow-x-auto">
-                    <table class="min-w-full text-sm text-slate-600 dark:text-slate-300">
-                        <thead>
-                            <tr class="text-left text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                                <th class="py-3">Waktu</th>
-                                <th class="py-3">Tipe</th>
-                                <th class="py-3">Aksi</th>
-                                <th class="py-3">Kelas</th>
-                                <th class="py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                            @foreach ($activities ?? [] as $act)
-                                <tr>
-                                    <td class="py-3">{{ $act->created_at ?? now() }}</td>
-                                    <td class="py-3">{{ $act->user_type ?? 'Siswa' }}</td>
-                                    <td class="py-3">{{ $act->message ?? 'Vote Cast Successfully' }}</td>
-                                    <td class="py-3">{{ $act->class ?? '-' }}</td>
-                                    <td class="py-3"><span
-                                            class="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">Verified</span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div> --}}
-        </section>
-
-        <section class="grid gap-4 lg:grid-cols-3">
-            <div
-                class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-400">Overall
-                    Progress</p>
-                <p class="mt-4 text-3xl font-black text-slate-900 dark:text-slate-100">{{ $stats['progress'] ?? '78%' }}
-                </p>
-                <div class="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div class="h-1" style="width: {{ $stats['progress_percent'] ?? 0 }}%; background-color: #34d399">
-                    </div>
-                </div>
-            </div>
-
-            <div
-                class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-400">Total
-                    Online</p>
-                <p class="mt-4 text-3xl font-black text-slate-900 dark:text-slate-100">{{ $stats['online'] ?? 0 }}</p>
-                <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">Users currently active</p>
-            </div>
-
-            <div
-                class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-400">Status
-                    Pemilihan</p>
-                <p
-                    class="mt-4 text-xl font-semibold text-{{ ($votingStatus ?? 'Sedang') == 'Ditutup' ? 'rose' : 'emerald' }}-600 dark:text-slate-100">
-                    {{ $votingStatus ?? 'Sedang Berlangsung' }}</p>
             </div>
         </section>
     </div>

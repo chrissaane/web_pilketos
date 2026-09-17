@@ -9,6 +9,7 @@ use App\Models\Election;
 use App\Models\Vote;
 use App\Models\VotingToken;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,6 +25,9 @@ class VoterController extends Controller
             $result = app(\App\Services\SiPintuGatewayService::class)->syncAllUsersFromGateway();
             $isSuccess = (bool) ($result['success'] ?? false);
             $count = (int) ($result['total'] ?? 0);
+            $newCount = (int) ($result['new_count'] ?? 0);
+            $updatedCount = (int) ($result['updated_count'] ?? 0);
+            $failedCount = (int) ($result['failed_count'] ?? 0);
             $message = $result['message'] ?? ($isSuccess ? 'Sinkronisasi SiPintu selesai.' : 'Sinkronisasi SiPintu gagal.');
 
             $redirectTo = route('admin.voters.index', [
@@ -37,6 +41,9 @@ class VoterController extends Controller
                     'success' => $isSuccess,
                     'message' => $message,
                     'count' => $count,
+                    'new_count' => $newCount,
+                    'updated_count' => $updatedCount,
+                    'failed_count' => $failedCount,
                     'redirect' => $redirectTo,
                 ];
 
@@ -49,6 +56,7 @@ class VoterController extends Controller
 
             return redirect($redirectTo)->with('error', $message);
         } catch (\Throwable $e) {
+            report($e);
             $redirectTo = route('admin.voters.index', [
                 'filter' => $request->query('filter', 'semua'),
                 'major' => $request->query('major', 'semua'),
@@ -58,12 +66,12 @@ class VoterController extends Controller
             if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Sinkronisasi SiPintu gagal: '.$e->getMessage(),
+                    'message' => 'Sinkronisasi SiPintu gagal. Silakan coba lagi atau periksa log server.',
                     'redirect' => $redirectTo,
                 ], 500);
             }
 
-            return redirect($redirectTo)->with('error', 'Sinkronisasi SiPintu gagal: '.$e->getMessage());
+            return redirect($redirectTo)->with('error', 'Sinkronisasi SiPintu gagal. Silakan coba lagi.');
         }
     }
 
@@ -72,6 +80,7 @@ class VoterController extends Controller
         $filters = [
             'semua' => 'Semua',
             'guru' => 'Guru',
+            'karyawan' => 'Karyawan',
         ];
 
         $classFilters = User::query()
@@ -119,8 +128,9 @@ class VoterController extends Controller
         $voters = User::query()
             ->eligibleVoters()
             ->when($selectedFilter === 'guru', fn($q) => $q->where('role', 'guru'))
+            ->when($selectedFilter === 'karyawan', fn($q) => $q->where('role', 'karyawan'))
             ->when($selectedFilter === 'semua', fn($q) => $q->where(function ($roleQuery) {
-                $roleQuery->where('role', 'guru')
+                $roleQuery->whereIn('role', ['guru', 'karyawan'])
                     ->orWhere(function ($studentQuery) {
                         $studentQuery->where('role', 'siswa')->where('is_active', true);
                     });
@@ -132,7 +142,7 @@ class VoterController extends Controller
                         $majorQuery->whereNull('major')->orWhere('major', '');
                     }), fn ($query) => $query->where('major', $selectedClassFilter['major']));
             })
-            ->orderByRaw("CASE WHEN role = 'guru' THEN 1 ELSE 0 END")
+            ->orderByRaw("CASE WHEN role IN ('guru', 'karyawan') THEN 1 ELSE 0 END")
             ->orderBy('class_group')
             ->orderBy('name')
             ->get();
@@ -165,18 +175,19 @@ class VoterController extends Controller
 
         $accounts = $voters->map(function ($voter) use ($activeElection, $votedUserIds) {
             $token = $this->resolveToken($voter->id, $activeElection);
+            $password = $voter->login_password ?: 'N/A';
 
             return [
                 'name' => $voter->name,
-                'group' => $voter->role === 'guru'
-                    ? 'Guru'
+                'group' => in_array($voter->role, ['guru', 'karyawan'], true)
+                    ? ucfirst($voter->role)
                     : $this->formatClassDisplay($voter->class_group, $voter->major),
                 'credential' => $voter->identity_number ?: 'N/A',
                 'email' => $voter->email ?: 'N/A',
                 'major' => $voter->major ?: 'N/A',
                 'phone' => $voter->phone ?: 'N/A',
                 'status' => in_array($voter->id, $votedUserIds, true) ? 'Sudah Memilih' : 'Belum Memilih',
-                'password' => $voter->password ? 'Terdaftar' : 'N/A',
+                'password' => $password ?: 'N/A',
                 'token' => $token ?? 'N/A',
                 'user_id' => $voter->id,
             ];
@@ -208,6 +219,7 @@ class VoterController extends Controller
             'xi' => 'XI',
             'xii' => 'XII',
             'guru' => 'Guru',
+            'karyawan' => 'Karyawan',
         ];
 
         $selectedFilter = strtolower($request->query('filter', 'semua'));
@@ -223,6 +235,8 @@ class VoterController extends Controller
             ->when($selectedFilter !== 'semua', function ($query) use ($selectedFilter) {
                 if ($selectedFilter === 'guru') {
                     $query->where('role', 'guru');
+                } elseif ($selectedFilter === 'karyawan') {
+                    $query->where('role', 'karyawan');
                 } else {
                     $query->where('role', 'siswa')
                         ->where('class_group', $this->resolveClassGroup($selectedFilter));
@@ -246,14 +260,15 @@ class VoterController extends Controller
 
         $accounts = $voters->map(function ($voter) use ($activeElection) {
             $token = $this->resolveToken($voter->id, $activeElection);
+            $password = $voter->login_password ?: ($voter->birth_date ? $voter->birth_date->format('Y-m-d') : 'N/A');
 
             return [
                 'name' => $voter->name,
-                'group' => $voter->role === 'guru'
-                    ? 'Guru'
+                'group' => in_array($voter->role, ['guru', 'karyawan'], true)
+                    ? ucfirst($voter->role)
                     : $this->formatClassDisplay($voter->class_group, $voter->major),
                 'credential' => $voter->identity_number,
-                'password' => $voter->birth_date ? $voter->birth_date->format('Y-m-d') : 'N/A',
+                'password' => $password,
                 'token' => $token ?? 'N/A',
                 'user_id' => $voter->id,
             ];
@@ -277,9 +292,19 @@ class VoterController extends Controller
         return $query->value('token');
     }
 
+    private function resolveClassGroup(string $filter): string
+    {
+        return match (strtolower($filter)) {
+            'x' => '10',
+            'xi' => '11',
+            'xii' => '12',
+            default => '10',
+        };
+    }
+
     private function resolveClassGroupValues(string $filter): array
     {
-        return match ($filter) {
+        return match (strtolower($filter)) {
             'x' => ['X', '10'],
             'xi' => ['XI', '11'],
             'xii' => ['XII', '12'],
@@ -313,6 +338,140 @@ class VoterController extends Controller
         $major = $request->query('major', 'semua');
 
         return (new VoterCredentialsExport($filter, $major))->download();
+    }
+
+    public function destroy(string $identity)
+    {
+        $voter = User::query()
+            ->where('identity_number', $identity)
+            ->firstOrFail();
+
+        $this->deactivateVoter($voter);
+
+        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih dinonaktifkan, bukan dihapus permanen agar sinkronisasi SiPintu dapat memperbarui status dengan aman.');
+    }
+
+    public function destroyById(User $user)
+    {
+        $this->deactivateVoter($user);
+
+        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih dinonaktifkan, bukan dihapus permanen agar sinkronisasi SiPintu dapat memperbarui status dengan aman.');
+    }
+
+    private function deactivateVoter(User $voter): void
+    {
+        $voter->update(['is_active' => false]);
+    }
+
+    public function updatePassword(Request $request, string $identity)
+    {
+        $voter = User::query()
+            ->where('identity_number', $identity)
+            ->firstOrFail();
+
+        $request->validate([
+            'password' => ['nullable', 'string', 'min:8', 'max:128'],
+        ]);
+
+        $newPassword = trim((string) $request->input('password', ''));
+
+        if ($newPassword === '') {
+            $newPassword = User::generateLocalPassword($voter->identity_number, $voter->name);
+        }
+
+        $voter->update([
+            'password' => $newPassword,
+            'login_password' => $newPassword,
+        ]);
+
+        return redirect()->route('admin.voters.index')->with('success', 'Password akun '.$voter->name.' berhasil diperbarui. Password baru: '.$newPassword);
+    }
+
+    public function regeneratePassword(Request $request, string $identity)
+    {
+        $voter = User::query()
+            ->where('identity_number', $identity)
+            ->firstOrFail();
+
+        $newPassword = User::generateLocalPassword($voter->identity_number, $voter->name);
+        $voter->update([
+            'password' => $newPassword,
+            'login_password' => $newPassword,
+        ]);
+
+        return redirect()->route('admin.voters.index')
+            ->with('success', 'Password pemilih '.$voter->name.' berhasil diregenerasi.')
+            ->with('generated_password', $newPassword);
+    }
+
+    public function regeneratePasswordsForFilter(Request $request)
+    {
+        @set_time_limit(600);
+        @ini_set('memory_limit', '512M');
+
+        $filter = strtolower((string) $request->input('filter', 'semua'));
+
+        $voters = User::query()
+            ->when($filter === 'guru', fn ($query) => $query->where('role', 'guru'))
+            ->when($filter === 'karyawan', fn ($query) => $query->where('role', 'karyawan'))
+            ->when($filter === 'siswa', fn ($query) => $query->where('role', 'siswa'))
+            ->when($filter === 'semua', fn ($query) => $query->whereIn('role', ['guru', 'karyawan', 'siswa']))
+            ->when(in_array($filter, ['x', 'xi', 'xii'], true), function ($query) use ($filter) {
+                $map = ['x' => '10', 'xi' => '11', 'xii' => '12'];
+                $query->where('role', 'siswa')->where('class_group', $map[$filter]);
+            })
+            ->get();
+
+        if ($voters->isEmpty()) {
+            return redirect()->route('admin.voters.print', ['filter' => $filter])
+                ->with('error', 'Tidak ada pemilih pada filter ini untuk diregenerasi password.');
+        }
+
+        $updated = 0;
+        $usedPasswords = $voters->pluck('login_password')->filter()->all();
+
+        foreach ($voters->chunk(200) as $chunk) {
+            $passwordMap = [];
+
+            foreach ($chunk as $voter) {
+                $newPassword = User::generateLocalPassword($voter->identity_number, $voter->name, $usedPasswords);
+                $usedPasswords[] = $newPassword;
+                $passwordMap[(int) $voter->id] = $newPassword;
+            }
+
+            if ($passwordMap === []) {
+                continue;
+            }
+
+            $cases = [];
+            $bindings = [];
+            $userIds = array_keys($passwordMap);
+
+            foreach ($passwordMap as $userId => $password) {
+                $cases[] = 'WHEN ? THEN ?';
+                $bindings[] = $userId;
+                $bindings[] = $password;
+            }
+
+            $idPlaceholders = implode(', ', array_fill(0, count($userIds), '?'));
+            $query = 'UPDATE users SET '
+                .'login_password = CASE id '.implode(' ', $cases).' ELSE login_password END, '
+                .'password = CASE id '.implode(' ', array_fill(0, count($userIds), 'WHEN ? THEN ?')).' ELSE password END '
+                .'WHERE id IN ('.$idPlaceholders.')';
+
+            $hashBindings = [];
+            foreach ($passwordMap as $userId => $password) {
+                $hashBindings[] = $userId;
+                $hashBindings[] = Hash::make($password);
+            }
+
+            $bindings = array_merge($bindings, $hashBindings, $userIds);
+            DB::statement($query, $bindings);
+            $updated += count($passwordMap);
+        }
+
+        return redirect()->route('admin.voters.index', ['filter' => $filter])
+            ->with('success', 'Password berhasil diregenerasi untuk '.$updated.' pemilih pada filter '.$filter.'.');
     }
 
     public function promote(Request $request)

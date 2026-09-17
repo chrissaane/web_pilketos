@@ -17,6 +17,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'login_password',
         'class_group',
         'major',
         'birth_date',
@@ -41,14 +42,40 @@ class User extends Authenticatable
 
     public function scopeEligibleVoters(Builder $query): Builder
     {
-        return $query->where(function (Builder $query) {
-            $query->where('role', 'guru')
-                ->orWhere(function (Builder $studentQuery) {
-                    $studentQuery->where('role', 'siswa')
-                        ->where('is_active', true)
-                        ->whereNotNull('class_group')
-                        ->whereRaw("TRIM(class_group) <> ''");
-                });
-        });
+        return $query
+            ->where('is_active', true)
+            ->where(function (Builder $query) {
+                $query->whereIn('role', ['guru', 'karyawan'])
+                    ->orWhere(function (Builder $studentQuery) {
+                        $studentQuery->where('role', 'siswa')
+                            ->whereNotNull('class_group')
+                            ->whereRaw("TRIM(class_group) <> ''");
+                    });
+            });
+    }
+
+    public static function generateLocalPassword(?string $identityNumber = null, ?string $name = null, ?array $usedPasswords = null): string
+    {
+        $usedPasswords ??= self::query()->pluck('login_password')->filter()->all();
+        $maxAttempts = 25;
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            $randomDigits = random_int(1000, 9999);
+            $candidate = sprintf('PILKETOS-%d', $randomDigits);
+
+            if (! in_array($candidate, $usedPasswords, true)) {
+                $usedPasswords[] = $candidate;
+
+                return $candidate;
+            }
+        }
+
+        $fallback = sprintf('PILKETOS-%d', random_int(1000, 9999));
+
+        if (in_array($fallback, $usedPasswords, true)) {
+            $fallback = sprintf('PILKETOS-%s', strtoupper(bin2hex(random_bytes(2))));
+        }
+
+        return $fallback;
     }
 }

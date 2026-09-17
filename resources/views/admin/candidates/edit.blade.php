@@ -41,13 +41,13 @@
                 @method('PUT')
 
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <!-- Banner / Pemilihan -->
+                    <!-- Card / Pemilihan -->
                     <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Banner</label>
+                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Card</label>
                         <select name="election_id"
                             class="mt-2 w-full rounded-xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-500"
                             required>
-                            <option value="">Pilih Banner</option>
+                            <option value="">Pilih Card</option>
                             @foreach ($banners as $banner)
                                 <option value="{{ $banner->id }}"
                                     {{ old('election_id', $candidate->election_id) == $banner->id ? 'selected' : '' }}>
@@ -173,35 +173,6 @@
                         @enderror
                     </div>
 
-                    <!-- Motto -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Motto</label>
-                        <textarea name="motto" rows="2"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('motto', $candidate->motto) }}</textarea>
-                        @error('motto')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Prestasi -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Prestasi</label>
-                        <textarea name="achievements" rows="3"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('achievements', $candidate->achievements) }}</textarea>
-                        @error('achievements')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Organisasi -->
-                    <div class="lg:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Organisasi</label>
-                        <textarea name="organizations" rows="3"
-                            class="mt-2 w-full rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:text-white dark:focus:border-blue-500">{{ old('organizations', $candidate->organizations) }}</textarea>
-                        @error('organizations')
-                            <p class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
-                        @enderror
-                    </div>
                 </div>
 
                 <!-- Action Buttons -->

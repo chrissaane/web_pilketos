@@ -8,24 +8,28 @@ use App\Models\Election;
 use App\Models\GuideItem;
 use App\Models\SiteSetting;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
 {
     public function index()
     {
         $showFinished = SiteSetting::getValue('show_finished', '1') === '1';
-        $elections = Election::with(['candidates' => fn ($query) => $query->withCount('votes')])
-            ->when(! $showFinished, fn ($query) => $query->where('end_time', '>=', now()))
+        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
+        $elections = Election::with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+            ->where('is_published', true)
             ->orderBy('start_time', 'desc')
             ->get();
         $resultElection = $elections->first();
+        $showVoteCounts = $resultElection?->publicResultsVisible() ?? false;
+        $resultsPublishAt = $resultElection?->results_publish_at;
         $resultCandidates = $resultElection?->candidates ?? collect();
         $resultTotalVotes = $resultCandidates->sum('votes_count');
         $resultVoterCount = User::query()->eligibleVoters()->count();
         $resultParticipation = $resultVoterCount > 0
             ? round(($resultTotalVotes / $resultVoterCount) * 100)
             : 0;
-        $landingBanner = Election::whereNotNull('banner_path')->orderBy('start_time', 'desc')->first();
+        $landingBanner = Election::where('is_published', true)->whereNotNull('banner_path')->orderBy('start_time', 'desc')->first();
         $settings = [
             'website_name' => SiteSetting::getValue('website_name', 'PILKETOS'),
             'school_name' => SiteSetting::getValue('school_name', 'SMKN 1 Bangsri'),
@@ -48,12 +52,15 @@ class HomeController extends Controller
             'resultCandidates',
             'resultTotalVotes',
             'resultVoterCount',
-            'resultParticipation'
+            'resultParticipation',
+            'showVoteCounts',
+            'resultsPublishAt'
         ));
     }
 
     public function showElection(Election $election)
     {
+        abort_unless($election->is_published, 404);
         $election->load(['candidates', 'votes']);
 
         $user = auth()->user();
@@ -68,6 +75,7 @@ class HomeController extends Controller
     public function showCandidate(Candidate $candidate)
     {
         $candidate->load('election');
+        abort_unless($candidate->election?->is_published, 404);
 
         $user = auth()->user();
         $hasVoted = false;
@@ -80,13 +88,53 @@ class HomeController extends Controller
 
     public function results()
     {
-        $elections = Election::with(['candidates' => fn ($query) => $query->withCount('votes')])
-            ->withCount('votes')
+        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
+        $elections = Election::with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+            ->where('is_published', true)
+            ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
             ->orderBy('start_time', 'desc')
             ->get();
         $voterCount = User::query()->eligibleVoters()->count();
+        $showVoteCounts = $elections->first()?->publicResultsVisible() ?? false;
+        $resultsPublishAt = $elections->first()?->results_publish_at;
 
-        return view('public.results', compact('elections', 'voterCount'));
+        return view('public.results', compact('elections', 'voterCount', 'showVoteCounts', 'resultsPublishAt'));
+    }
+
+    public function publicResultsData()
+    {
+        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
+        $election = Election::query()
+            ->where('is_published', true)
+            ->with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+            ->orderBy('start_time', 'desc')
+            ->first();
+        $totalVotes = $election?->candidates->sum('votes_count') ?? 0;
+        $voterCount = $eligibleVoterIds->count();
+        $visible = $election?->publicResultsVisible() ?? false;
+
+        return response()->json([
+            'visible' => $visible,
+            'total_votes' => $visible ? $totalVotes : 0,
+            'voter_count' => $voterCount,
+            'participation' => $visible && $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0,
+            'candidates' => $election?->candidates->map(fn ($candidate) => [
+                'id' => $candidate->id,
+                'votes' => $visible ? $candidate->votes_count : 0,
+                'percent' => $visible && $totalVotes > 0 ? round(($candidate->votes_count / $totalVotes) * 100) : 0,
+            ])->values() ?? [],
+        ]);
+    }
+
+    private function showVoteCounts(): bool
+    {
+        $publishAt = SiteSetting::getValue('results_publish_at', '');
+
+        if (SiteSetting::getValue('show_vote_counts_public', '1') !== '1') {
+            return false;
+        }
+
+        return blank($publishAt) || now()->greaterThanOrEqualTo(Carbon::parse($publishAt));
     }
 
     public function sipintuData()

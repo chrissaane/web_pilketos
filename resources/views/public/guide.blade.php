@@ -196,11 +196,8 @@
                     </li>
                     <li class="guide-step"><span class="guide-step-number">04</span>
                         <div>
-                            <h3>Kelola atau berikan suara</h3>
-                            <p>Siswa memasukkan token
-                                pemilihan yang valid, lalu memilih kandidat. Guru dan Admin dapat mengelola data serta
-                                memantau
-                                proses sesuai kewenangan.</p>
+                            <h3>Berikan suara</h3>
+                            <p>Siswa, guru, dan karyawan memasukkan token pemilihan yang valid, lalu memilih kandidat.</p>
                         </div>
                     </li>
                     <li class="guide-step"><span class="guide-step-number">05</span>

@@ -12,12 +12,17 @@ class VoterCredentialsExport
 {
     public function __construct(protected string $filter = 'semua', protected string $major = 'semua')
     {
-        $allowed = ['semua', 'guru', 'siswa', 'kelas_10', 'kelas_11', 'kelas_12', 'x', 'xi', 'xii'];
-        $this->filter = in_array($this->filter, $allowed, true)
-            ? $this->filter
+        $normalizedFilter = strtolower((string) $this->filter);
+        $allowed = ['semua', 'guru', 'karyawan', 'siswa', 'x', 'xi', 'xii', 'kelas_10', 'kelas_11', 'kelas_12'];
+        $isClassFilter = str_starts_with($normalizedFilter, 'kelas_');
+
+        $this->filter = in_array($normalizedFilter, $allowed, true) || $isClassFilter
+            ? $normalizedFilter
             : 'semua';
 
-        $this->major = 'semua';
+        $this->major = in_array($this->major, ['semua', 'to_1', 'to_2', 'pplg_1', 'pplg_2', 'tkj_1', 'tkj_2'], true)
+            ? $this->major
+            : 'semua';
     }
 
     public function download(): BinaryFileResponse
@@ -56,11 +61,12 @@ class VoterCredentialsExport
     {
         $slug = match ($this->filter) {
             'guru' => 'guru',
+            'karyawan' => 'karyawan',
             'siswa' => 'siswa',
             'kelas_10', 'x' => 'kelas_10',
             'kelas_11', 'xi' => 'kelas_11',
             'kelas_12', 'xii' => 'kelas_12',
-            default => 'semua',
+            default => str_starts_with($this->filter, 'kelas_') ? str_replace('_', '-', $this->filter) : 'semua',
         };
 
         return sprintf('data-pemilih-%s-%s.xlsx', $slug, now()->format('Ymd'));
@@ -71,17 +77,24 @@ class VoterCredentialsExport
         $activeElection = Election::where('status', Election::STATUS_ACTIVE)->first();
 
         $query = User::eligibleVoters();
+        $classCriteria = $this->parseClassFilter($this->filter);
 
         if ($this->filter === 'guru') {
             $query->where('role', 'guru');
+        } elseif ($this->filter === 'karyawan') {
+            $query->where('role', 'karyawan');
         } elseif ($this->filter === 'siswa') {
             $query->where('role', 'siswa');
-        } elseif (in_array($this->filter, ['kelas_10', 'kelas_11', 'kelas_12', 'x', 'xi', 'xii'], true)) {
+        } elseif ($classCriteria['class_group'] !== null) {
             $query->where('role', 'siswa')
-                ->where('class_group', $this->filter === 'x' ? '10' : ($this->filter === 'xi' ? '11' : '12'));
+                ->where('class_group', $classCriteria['class_group']);
+
+            if ($classCriteria['major'] !== null) {
+                $query->whereRaw('LOWER(REPLACE(COALESCE(major, ""), " ", "_")) = ?', [$classCriteria['major']]);
+            }
         }
 
-        $rows = [['NIS/NIP', 'Password', 'Token']];
+        $rows = [['NIS/NIP', 'Email', 'Password', 'Token']];
 
         $voters = $query->get()->sort(function ($firstVoter, $secondVoter) {
             $firstIdentity = trim((string) ($firstVoter->identity_number ?? ''));
@@ -99,15 +112,42 @@ class VoterCredentialsExport
 
         foreach ($voters as $voter) {
             $token = $this->resolveToken($voter->id, $activeElection);
+            $passwordValue = $voter->login_password ?: ($voter->birth_date ? $voter->birth_date->format('Y-m-d') : '-');
 
             $rows[] = [
                 $voter->identity_number ?? '-',
-                $voter->birth_date ? $voter->birth_date->format('Y-m-d') : '-',
+                $voter->email ?? '-',
+                $passwordValue,
                 $token ?? '-',
             ];
         }
 
         return $rows;
+    }
+
+    private function parseClassFilter(string $filter): array
+    {
+        if (! str_starts_with($filter, 'kelas_')) {
+            return ['class_group' => null, 'major' => null];
+        }
+
+        $raw = substr($filter, strlen('kelas_'));
+        $parts = array_values(array_filter(explode('_', strtolower($raw)), fn (string $part) => $part !== ''));
+
+        if ($parts === []) {
+            return ['class_group' => null, 'major' => null];
+        }
+
+        $classGroup = match ($parts[0]) {
+            'x', '10' => '10',
+            'xi', '11' => '11',
+            'xii', '12' => '12',
+            default => null,
+        };
+
+        $major = count($parts) > 1 ? implode('_', array_slice($parts, 1)) : null;
+
+        return ['class_group' => $classGroup, 'major' => $major];
     }
 
     private function resolveToken(int $userId, ?Election $activeElection): ?string

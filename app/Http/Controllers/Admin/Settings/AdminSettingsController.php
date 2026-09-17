@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\AboutPage;
 use App\Models\GuideItem;
+use App\Models\Election;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -180,5 +181,21 @@ class AdminSettingsController extends Controller
         }
 
         return back()->with('success', 'Informasi tentang website berhasil disimpan.');
+    }
+
+    public function storeResultsVisibility(Request $request)
+    {
+        $data = $request->validate([
+            'election_id' => ['required', 'integer', 'exists:elections,id'],
+            'results_publish_at' => ['nullable', 'date'],
+            'show_vote_counts_public' => ['nullable', 'boolean'],
+        ]);
+
+        Election::whereKey($data['election_id'])->update([
+            'results_publish_at' => $data['results_publish_at'] ?? null,
+            'show_vote_counts_public' => $request->boolean('show_vote_counts_public'),
+        ]);
+
+        return back()->with('success', 'Jadwal statistik card berhasil disimpan.');
     }
 }

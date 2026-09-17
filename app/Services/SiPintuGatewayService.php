@@ -381,6 +381,9 @@ class SiPintuGatewayService
 
             $studentCount = 0;
             $teacherCount = 0;
+            $newCount = 0;
+            $updatedCount = 0;
+            $failedCount = 0;
 
             // 3. Proses dalam batch untuk menjaga transaksi dan waktu eksekusi tetap aman
             $chunks = array_chunk($users, 250);
@@ -392,17 +395,22 @@ class SiPintuGatewayService
                     $chunk,
                     &$studentCount,
                     &$teacherCount,
+                    &$newCount,
+                    &$updatedCount,
+                    &$failedCount,
                     &$existingByIdentity,
                     &$existingByEmail,
                     &$hashCache
                 ) {
                     foreach ($chunk as $userData) {
                         if (! is_array($userData)) {
+                            $failedCount++;
                             continue;
                         }
 
                         $identityNumber = $this->extractIdentityNumber($userData);
                         if (blank($identityNumber)) {
+                            $failedCount++;
                             continue;
                         }
 
@@ -411,23 +419,10 @@ class SiPintuGatewayService
                         $existingUser = $existingByIdentity[(string) $identityNumber]
                             ?? ($email ? ($existingByEmail[(string) $email] ?? null) : null);
 
-                        // Cek apakah payload memiliki password eksplisit
-                        $explicitPassword = $this->extractPlainPasswordOrNull($userData);
-                        $birthDate = $this->firstNonEmptyValue($userData, ['birth_date', 'tanggal_lahir', 'date_of_birth', 'dob', 'tgl_lahir']);
-
-                        $plainFallback = ! blank($explicitPassword)
-                            ? $explicitPassword
-                            : (! blank($birthDate) ? $birthDate : 'password');
-
-                        $prehashed = null;
-                        if (! $existingUser || empty($existingUser->password)) {
-                            $prehashed = $hashCache[$plainFallback] ??= Hash::make($plainFallback);
-                        }
-
                         $syncedUser = $this->syncUserFromGateway(
                             $userData,
-                            $explicitPassword ?? '',
-                            $prehashed,
+                            '',
+                            null,
                             $existingUser
                         );
 
@@ -437,11 +432,19 @@ class SiPintuGatewayService
                                 $existingByEmail[(string) $syncedUser->email] = $syncedUser;
                             }
 
-                            if ($syncedUser->role === 'guru') {
+                            if ($existingUser instanceof User) {
+                                $updatedCount++;
+                            } else {
+                                $newCount++;
+                            }
+
+                            if (in_array($syncedUser->role, ['guru', 'karyawan'], true)) {
                                 $teacherCount++;
                             } else {
                                 $studentCount++;
                             }
+                        } else {
+                            $failedCount++;
                         }
                     }
                 });
@@ -454,7 +457,10 @@ class SiPintuGatewayService
                 'students' => $studentCount,
                 'teachers' => $teacherCount,
                 'total' => $total,
-                'message' => "Sinkronisasi SiPintu selesai. Berhasil menyinkronkan {$total} pengguna ({$studentCount} siswa, {$teacherCount} guru).",
+                'new_count' => $newCount,
+                'updated_count' => $updatedCount,
+                'failed_count' => $failedCount,
+                'message' => "Sinkronisasi SiPintu selesai. Baru: {$newCount}, Diperbarui: {$updatedCount}, Gagal: {$failedCount}.",
             ];
         } catch (\Throwable $e) {
             return [
@@ -823,7 +829,7 @@ class SiPintuGatewayService
         $major = $parsedClass['major'] ?? $rawMajor;
 
         $birthDate = $this->firstNonEmptyValue($userData, ['birth_date', 'tanggal_lahir', 'date_of_birth', 'dob', 'tgl_lahir']);
-        $phone = $this->firstNonEmptyValue($userData, ['phone', 'phone_number', 'telephone', 'no_hp', 'telepon', 'mobile', 'nomor_telepon', 'telp']);
+        $phone = $this->firstNonEmptyValue($userData, ['phone', 'phone_number', 'telephone', 'no_hp', 'nomor_hp', 'hp', 'wa', 'no_wa', 'telepon', 'mobile', 'nomor_telepon', 'telp', 'handphone']);
         $isClassEmpty = blank($classGroup) && blank($rawClassValue);
         $defaultActive = ! ($role === 'siswa' && $isClassEmpty);
         $isActive = (bool) $this->firstNonEmptyValue($userData, ['is_active', 'active', 'status_aktif', 'is_active_user', 'status_user'], $defaultActive);
@@ -862,20 +868,15 @@ class SiPintuGatewayService
         ];
 
         if ($user) {
-            // Jika user sudah ada dan sudah memiliki password:
-            // Hanya update password bila pemanggil secara eksplisit memberikan input password baru
-            if (! blank($password)) {
-                if (empty($user->password) || ! Hash::check($password, $user->password)) {
-                    $attributes['password'] = Hash::make($password);
-                }
-            } elseif (empty($user->password)) {
-                if (! blank($prehashedPassword)) {
-                    $attributes['password'] = $prehashedPassword;
-                } else {
-                    $effective = $this->extractPlainPassword($userData);
-                    $fallback = ! blank($effective) ? $effective : (! blank($birthDate) ? $birthDate : $identityNumber);
-                    $attributes['password'] = Hash::make($fallback);
-                }
+            if (empty($user->password)) {
+                $generatedPassword = User::generateLocalPassword($identityNumber, $name);
+                $attributes['password'] = Hash::make($generatedPassword);
+                $attributes['login_password'] = $generatedPassword;
+            } elseif (blank($user->login_password)) {
+                $attributes['login_password'] = $user->login_password;
+            } else {
+                $attributes['password'] = $user->password;
+                $attributes['login_password'] = $user->login_password;
             }
 
             $user->fill($attributes);
@@ -886,17 +887,11 @@ class SiPintuGatewayService
             return $user;
         }
 
-        // Akun baru (New User)
-        if (! blank($prehashedPassword)) {
-            $hashedPassword = $prehashedPassword;
-        } else {
-            $effectivePassword = ! blank($password) ? $password : $this->extractPlainPassword($userData);
-            $fallbackPassword = ! blank($effectivePassword) ? $effectivePassword : (! blank($birthDate) ? $birthDate : $identityNumber);
-            $hashedPassword = Hash::make($fallbackPassword);
-        }
+        $localPassword = User::generateLocalPassword($identityNumber, $name);
 
         return User::create(array_merge($attributes, [
-            'password' => $hashedPassword,
+            'password' => Hash::make($localPassword),
+            'login_password' => $localPassword,
         ]));
     }
 
@@ -907,7 +902,8 @@ class SiPintuGatewayService
         if (! blank($value)) {
             return match (true) {
                 in_array($value, ['admin', 'administrator', 'superadmin', 'owner'], true) => 'admin',
-                in_array($value, ['guru', 'teacher', 'dosen', 'pegawai', 'staff', 'teacher_staff'], true) => 'guru',
+                in_array($value, ['pegawai', 'staff', 'karyawan'], true) => 'karyawan',
+                in_array($value, ['guru', 'teacher', 'dosen', 'teacher_staff'], true) => 'guru',
                 in_array($value, ['student', 'siswa', 'murid', 'pelajar', 'alumni', 'alumni_siswa'], true) => 'siswa',
                 str_contains($value, 'guru') => 'guru',
                 str_contains($value, 'admin') => 'admin',

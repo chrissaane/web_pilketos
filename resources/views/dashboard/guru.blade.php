@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Guru - PILKETOS')
+@section('title', 'Dashboard Guru/Karyawan - PILKETOS')
 
 @section('content')
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         @include('components.voter-dashboard', [
             'user' => $user,
-            'roleLabel' => 'Guru Aktif',
+            'roleLabel' => 'Guru/Karyawan Aktif',
             'summaryTitle' => 'Selamat Datang',
             'hasVoted' => $hasVoted,
             'election' => $election,

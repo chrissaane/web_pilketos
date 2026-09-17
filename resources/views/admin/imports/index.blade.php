@@ -5,7 +5,8 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white">Import Data Pemilih</h2>
-                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Unggah Excel siswa atau guru, lihat preview, lalu
+                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Unggah Excel siswa, guru, atau karyawan, lihat
+                    preview, lalu
                     konfirmasi impor data ke database.</p>
             </div>
             <a href="{{ route('admin.voters.index') }}"
@@ -28,6 +29,16 @@
         @endif
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div
+                class="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+                <p class="font-semibold">Format Excel yang didukung</p>
+                <p class="mt-1">Gunakan header berikut: <strong>Nama, Tingkat, NIS / NIP, Email, No HP</strong></p>
+                <p class="mt-1 text-xs">Kolom <strong>Nama</strong>, <strong>Tingkat</strong>, dan <strong>Email</strong>
+                    wajib diisi. NIS / NIP dan No HP boleh dikosongkan. Contoh Tingkat: <strong>XII PPLG 2</strong>,
+                    <strong>XI</strong>, <strong>Guru</strong>, atau <strong>Karyawan</strong>.
+                </p>
+            </div>
+
             <form action="{{ route('admin.import.store') }}" method="POST" enctype="multipart/form-data"
                 x-data="{ confirmed: false }">
                 @csrf
@@ -41,6 +52,11 @@
                 </div>
 
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <button type="submit" name="direct_import" value="1"
+                        class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                        <i class="fa-solid fa-file-import"></i>
+                        Import Langsung
+                    </button>
                     <button type="submit" name="preview" value="1"
                         class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
                         <i class="fa-solid fa-eye"></i>
@@ -85,8 +101,10 @@
                                         <th class="px-4 py-3">Baris</th>
                                         <th class="px-4 py-3">NIS / NIP</th>
                                         <th class="px-4 py-3">Nama</th>
-                                        <th class="px-4 py-3">Tanggal Lahir</th>
-                                        <th class="px-4 py-3">Kelas / Jurusan</th>
+                                        <th class="px-4 py-3">Tingkat / Jurusan</th>
+                                        <th class="px-4 py-3">Email</th>
+                                        <th class="px-4 py-3">No HP</th>
+                                        <th class="px-4 py-3">Password</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-transparent">
@@ -96,16 +114,18 @@
                                                 class="whitespace-nowrap px-4 py-3 font-medium text-slate-700 dark:text-slate-200">
                                                 {{ $loop->iteration }}</td>
                                             <td class="px-4 py-3 text-slate-500 dark:text-slate-400">
-                                                {{ $row['identity_number'] }}</td>
+                                                {{ $row['display_identity_number'] ?? '-' }}</td>
                                             <td class="px-4 py-3">{{ $row['name'] }}</td>
-                                            <td class="px-4 py-3">{{ $row['birth_date'] }}</td>
                                             <td class="px-4 py-3">
-                                                {{ $row['role'] === 'guru' ? 'Guru' : 'Kelas ' . $row['class_group'] . ' / ' . $row['major'] }}
+                                                {{ in_array($row['role'] ?? null, ['guru', 'karyawan'], true) ? ucfirst($row['role']) : 'Kelas ' . $row['class_group'] . ' / ' . $row['major'] }}
                                             </td>
+                                            <td class="px-4 py-3">{{ $row['email'] ?? '-' }}</td>
+                                            <td class="px-4 py-3">{{ $row['phone'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 font-mono">{{ $row['password'] ?? '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5"
+                                            <td colspan="7"
                                                 class="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                                                 Tidak ada data preview untuk ditampilkan.</td>
                                         </tr>
@@ -127,33 +147,6 @@
                             </div>
                         @endif
 
-                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                            <button type="button"
-                                @click="Swal.fire({
-                                title: 'Apakah Anda yakin ingin mengimpor data ini?',
-                                html: 'Pastikan jenis data dan file sudah benar sebelum melanjutkan.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Import',
-                                cancelButtonText: 'Batal',
-                                customClass: {
-                                    popup: 'rounded-3xl p-6 bg-white dark:bg-slate-900',
-                                    confirmButton: 'inline-block w-full rounded-full bg-blue-600 px-6 py-3 text-white text-lg font-bold hover:bg-blue-700',
-                                    cancelButton: 'inline-block w-full mt-3 rounded-full border border-slate-300 bg-white px-6 py-3 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                                }
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    $el = document.querySelector('form');
-                                    if ($el) {
-                                        $el.submit();
-                                    }
-                                }
-                            })"
-                                class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                                <i class="fa-solid fa-file-import"></i>
-                                Ya, Import
-                            </button>
-                        </div>
                     </div>
                 @endif
             </form>

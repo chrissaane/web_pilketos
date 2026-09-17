@@ -65,6 +65,7 @@ class LoginController extends Controller
             case 'admin':
                 return redirect()->route('admin.dashboard');
             case 'guru':
+            case 'karyawan':
                 return redirect()->route('guru.dashboard');
             default:
                 return redirect()->route('siswa.dashboard');

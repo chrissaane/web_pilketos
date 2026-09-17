@@ -10,6 +10,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminPassword = env('ADMIN_PASSWORD');
+
+        if (blank($adminPassword)) {
+            throw new \RuntimeException('ADMIN_PASSWORD harus diatur sebelum menjalankan UserSeeder.');
+        }
+
         // 1. Akun Admin
         User::updateOrCreate(
             ['identity_number' => 'admin'],
@@ -17,39 +23,10 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
                 'name' => 'Administrator PILKETOS',
                 'email' => 'admin@smkn1bangsri.sch.id',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make($adminPassword),
                 'is_active' => true,
             ]
         );
 
-        // 2. Akun Guru
-        User::updateOrCreate(
-            ['identity_number' => '198501012010011001'],
-            [
-                'role' => 'guru',
-                'name' => 'Guru Pembina OSIS, S.Pd',
-                'email' => 'guru@smkn1bangsri.sch.id',
-                'password' => Hash::make('1985-01-01'),
-                'birth_date' => '1985-01-01',
-                'phone' => '081234567890',
-                'is_active' => true,
-            ]
-        );
-
-        // 3. Akun Siswa
-        User::updateOrCreate(
-            ['identity_number' => '20261001'],
-            [
-                'role' => 'siswa',
-                'name' => 'Siswa SMKN 1 Bangsri',
-                'email' => 'siswa@smkn1bangsri.sch.id',
-                'password' => Hash::make('2008-05-12'),
-                'class_group' => 'XI',
-                'major' => 'PPLG 1',
-                'birth_date' => '2008-05-12',
-                'phone' => '089876543210',
-                'is_active' => true,
-            ]
-        );
     }
 }

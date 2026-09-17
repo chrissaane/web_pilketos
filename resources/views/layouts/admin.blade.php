@@ -1060,7 +1060,6 @@
             <footer
                 class="admin-footer bg-white border-t border-slate-200 px-6 py-4 text-xs text-slate-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">
                 <div class="max-w-7xl mx-auto flex items-center justify-between">
-                    <div>Versi: <span class="font-semibold">1.0.0</span></div>
                     <div>&copy; {{ date('Y') }} PILKETOS SMKN 1 Bangsri</div>
                 </div>
             </footer>

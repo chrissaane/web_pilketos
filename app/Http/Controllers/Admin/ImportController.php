@@ -74,6 +74,33 @@ class ImportController extends Controller
         $file = $request->file('file');
         $tempPath = $file->store('imports', 'local');
         $fullPath = Storage::disk('local')->path($tempPath);
+
+        if ($request->boolean('direct_import')) {
+            $import = new VoterImport(false);
+
+            DB::beginTransaction();
+            try {
+                Excel::import($import, $fullPath);
+
+                if (count($import->errors) > 0) {
+                    throw new \RuntimeException('Terdapat beberapa baris yang gagal diproses. Tidak ada data yang disimpan.');
+                }
+
+                DB::commit();
+                Storage::disk('local')->delete($tempPath);
+
+                return redirect()->route('admin.voters.index')
+                    ->with('success', sprintf('Import selesai. Ditambahkan: %d, Diperbarui: %d.', $import->added, $import->updated));
+            } catch (\Throwable $exception) {
+                DB::rollBack();
+                if (Storage::disk('local')->exists($tempPath)) {
+                    Storage::disk('local')->delete($tempPath);
+                }
+
+                return back()->withErrors(['file' => 'Gagal mengimpor file Excel: ' . $exception->getMessage()]);
+            }
+        }
+
         $preview = new VoterImport(true);
 
         try {

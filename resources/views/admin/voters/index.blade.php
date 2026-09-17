@@ -3,7 +3,7 @@
 @section('content')
     <div class="admin-resource-page admin-voters-page space-y-6">
         <!-- Header Section -->
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="flex min-w-0 flex-col gap-5">
             <div>
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white">Data Pemilih</h2>
                 <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Kelola data akun pemilih dan token yang aktif
@@ -11,13 +11,14 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col gap-3 sm:flex-row">
-                <div class="flex flex-col gap-2 sm:flex-row">
-                    <form id="sipintuSyncForm" action="{{ route('admin.voters.sync') }}" method="POST" class="inline-block">
+            <div class="flex min-w-0 flex-col gap-4">
+                <div class="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-6">
+                    <form id="sipintuSyncForm" action="{{ route('admin.voters.sync') }}" method="POST"
+                        class="inline-block h-full">
                         @csrf
                         <input type="hidden" name="filter" value="{{ $selectedFilter }}">
                         <button type="submit"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500">
+                            class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500">
                             <i class="fa-solid fa-rotate"></i>
                             <span>Sinkronisasi SiPintu</span>
                         </button>
@@ -45,7 +46,7 @@
                         confirmButtonText: 'Ya, Buat',
                         cancelButtonText: 'Batal'
                     }).then((r) => { if (r.isConfirmed) document.getElementById('generateTokensForm').submit(); })"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500">
+                        class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500">
                         <i class="fa-solid fa-key"></i>
                         Buat Token Otomatis
                     </button>
@@ -59,7 +60,7 @@
                         confirmButtonText: 'Ya, Ganti',
                         cancelButtonText: 'Batal'
                     }).then((r) => { if (r.isConfirmed) document.getElementById('regenerateTokensForm').submit(); })"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500">
+                        class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500">
                         <i class="fa-solid fa-rotate"></i>
                         Regenerasi Token
                     </button>
@@ -68,15 +69,26 @@
                     <form id="archiveForm" action="{{ route('admin.voters.archive_xii') }}" method="POST"
                         style="display:none">@csrf</form>
 
-                    <a href="{{ route('admin.voters.print', ['filter' => $selectedFilter]) }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500">
-                        <i class="fa-solid fa-print"></i>
-                        Cetak Data Pemilih
+                    <a href="{{ route('admin.import.index') }}"
+                        class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 dark:bg-cyan-600 dark:hover:bg-cyan-500">
+                        <i class="fa-solid fa-file-import"></i>
+                        Import Excel
                     </a>
 
-                    <div x-data="{ open: false }" class="relative">
+                    <form action="{{ route('admin.voters.regenerate_passwords') }}" method="POST"
+                        data-confirm="Regenerasi password pemilih untuk filter ini?" class="inline-block h-full w-full">
+                        @csrf
+                        <input type="hidden" name="filter" value="{{ $selectedFilter }}">
+                        <button type="submit"
+                            class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            Regenerasi Password
+                        </button>
+                    </form>
+
+                    <div x-data="{ open: false }" class="relative h-full">
                         <button @click="open = !open" @click.away="open = false" type="button"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500">
+                            class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500">
                             <i class="fa-solid fa-file-excel"></i>
                             Unduh Excel
                             <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"
@@ -91,6 +103,10 @@
                             x-transition:leave-end="transform opacity-0 scale-95"
                             class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
                             <div class="py-1">
+                                <a href="{{ route('admin.voters.export', ['filter' => $selectedFilter]) }}"
+                                    class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                    Unduh Filter Saat Ini
+                                </a>
                                 <a href="{{ route('admin.voters.export', ['filter' => 'semua']) }}"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Semua
@@ -103,21 +119,26 @@
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Data Guru
                                 </a>
+                                <a href="{{ route('admin.voters.export', ['filter' => 'karyawan']) }}"
+                                    class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                    Unduh Data Karyawan
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Filter Dropdown -->
-                <div class="mt-4 grid w-full max-w-xl gap-3 sm:grid-cols-2">
+                <div class="grid w-full gap-3 lg:grid-cols-2 lg:items-end">
                     <form id="voterFilterForm" method="GET" action="{{ route('admin.voters.index') }}" class="contents">
                         <div class="space-y-2">
                             <label for="filter"
                                 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tingkat</label>
-                            <select id="filter" name="filter"
+                            <select id="filter" name="filter" onchange="this.form.submit()"
                                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-400 dark:focus:ring-blue-900">
                                 @foreach ($filters as $slug => $label)
-                                    <option value="{{ $slug }}" {{ $selectedFilter === $slug ? 'selected' : '' }}>
+                                    <option value="{{ $slug }}"
+                                        {{ $selectedFilter === $slug ? 'selected' : '' }}>
                                         {{ $label }}</option>
                                 @endforeach
                             </select>
@@ -125,7 +146,7 @@
                         <div class="space-y-2">
                             <label for="voting_status"
                                 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Status Voting</label>
-                            <select id="voting_status" name="voting_status"
+                            <select id="voting_status" name="voting_status" onchange="this.form.submit()"
                                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                 @foreach ($votingStatuses as $statusKey => $statusLabel)
                                     <option value="{{ $statusKey }}"
@@ -134,10 +155,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        <button type="submit"
-                            class="w-full rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 sm:col-span-2">
-                            Terapkan
-                        </button>
                     </form>
                 </div>
             </div>
@@ -147,6 +164,12 @@
             <div
                 class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
                 {{ session('success') }}
+                @if (session('generated_password'))
+                    <div
+                        class="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-2 font-semibold text-emerald-900 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200">
+                        Password baru: {{ session('generated_password') }}
+                    </div>
+                @endif
             </div>
         @endif
 
@@ -202,20 +225,24 @@
                         <thead
                             class="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
                             <tr>
+                                <th class="w-16 px-6 py-4">No.</th>
                                 <th class="px-6 py-4">Nama</th>
-                                <th class="px-6 py-4">Kelas</th>
+                                <th class="px-6 py-4">Tingkat</th>
                                 <th class="px-6 py-4">NIS / NIP</th>
                                 <th class="px-6 py-4">Email</th>
                                 <th class="px-6 py-4">No HP</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4">Password</th>
                                 <th class="px-6 py-4">Token</th>
+                                <th class="px-6 py-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="votersTableBody"
                             class="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-transparent">
                             @forelse($accounts as $account)
                                 <tr class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                    <td class="whitespace-nowrap px-6 py-4 text-slate-500 dark:text-slate-400">
+                                        {{ $loop->iteration }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 font-semibold text-slate-900 dark:text-white">
                                         {{ $account['name'] }}</td>
                                     <td class="whitespace-nowrap px-6 py-4">{{ $account['group'] }}</td>
@@ -231,10 +258,40 @@
                                         {{ $account['password'] }}</td>
                                     <td class="whitespace-nowrap px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
                                         {{ $account['token'] }}</td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <form
+                                                action="{{ route('admin.voters.password.update', $account['credential']) }}"
+                                                method="POST" class="inline-block" data-password-form
+                                                data-account-name="{{ $account['name'] }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="password" value="">
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200"
+                                                    title="Edit password pemilih">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                    Edit
+                                                </button>
+                                            </form>
+
+                                            <form action="{{ route('admin.voters.destroy_by_id', $account['user_id']) }}"
+                                                method="POST" data-confirm="Yakin ingin menonaktifkan data pemilih ini?">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+                                                    title="Nonaktifkan pemilih">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-12 text-center">
+                                    <td colspan="10" class="px-6 py-12 text-center">
                                         <div
                                             class="flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
                                             <i
@@ -255,6 +312,36 @@
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('voterSearch');
             const tableBody = document.getElementById('votersTableBody');
+
+            document.querySelectorAll('[data-password-form]').forEach((form) => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    if (!window.Swal) {
+                        form.submit();
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Ubah Password Pemilih',
+                        text: `Masukkan password baru untuk ${form.dataset.accountName}. Kosongkan untuk membuat password otomatis.`,
+                        input: 'password',
+                        inputPlaceholder: 'Password baru (opsional)',
+                        inputAttributes: {
+                            autocomplete: 'new-password'
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'Simpan Password',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.querySelector('input[name="password"]').value = result
+                                .value || '';
+                            form.submit();
+                        }
+                    });
+                });
+            });
 
             function applyVoterSearch() {
                 if (!searchInput || !tableBody) return;

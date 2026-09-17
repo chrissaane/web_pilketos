@@ -13,7 +13,7 @@
             background: #101116;
             color: var(--ink);
             font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
-            overflow: hidden;
+            overflow-x: clip;
         }
 
         .pilketos-home h1,
@@ -46,7 +46,7 @@
 
         .pilketos-hero {
             position: relative;
-            min-height: 840px;
+            min-height: 620px;
             padding: 92px 12% 76px;
             border: 1px solid var(--line);
             background: radial-gradient(ellipse at 57% 7%, rgba(31, 40, 255, .94) 0, rgba(15, 18, 112, .78) 22%, transparent 47%), radial-gradient(ellipse at 43% 58%, rgba(23, 48, 255, .7), transparent 34%), #111217;
@@ -129,6 +129,32 @@
             font-style: normal;
         }
 
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 28px;
+            padding: 13px 18px;
+            border: 1px solid var(--cyan);
+            background: var(--cyan);
+            color: #101116;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            transition: transform .2s ease, background-color .2s ease;
+        }
+
+        .hero-cta:after {
+            content: '↓';
+            font-size: 17px;
+        }
+
+        .hero-cta:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+
         .stats-grid,
         .election-grid,
         .guide-grid,
@@ -175,48 +201,6 @@
             color: var(--muted);
             font-size: 10px;
             line-height: 1.35;
-        }
-
-        .hero-card {
-            position: absolute;
-            z-index: 2;
-            top: -22px;
-            right: 28px;
-            width: 190px;
-            padding: 19px;
-            border: 1px solid var(--line);
-            background: rgba(24, 26, 39, .72);
-            backdrop-filter: blur(12px);
-        }
-
-        .hero-card h2 {
-            margin-top: 17px;
-            font-size: 19px;
-            font-weight: 400;
-            line-height: .96;
-        }
-
-        .hero-card p {
-            margin-top: 18px !important;
-            color: var(--muted);
-            font-size: 10px;
-            line-height: 1.3;
-        }
-
-        .hero-card strong {
-            display: block;
-            margin-top: 19px;
-            padding-top: 12px;
-            border-top: 1px solid var(--cyan);
-            font-family: Georgia, serif;
-            font-size: 32px;
-            font-style: italic;
-        }
-
-        .hero-card small {
-            color: var(--muted);
-            font-size: 8px;
-            text-transform: uppercase;
         }
 
         .home-section {
@@ -358,6 +342,12 @@
             text-transform: uppercase;
         }
 
+        .election-card-status.status-finished {
+            border-color: rgba(251, 113, 133, .7);
+            background: rgba(127, 29, 29, .3);
+            color: #fb7185;
+        }
+
         .guide-grid {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -390,7 +380,7 @@
         }
 
         .result-strip {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             margin: 25px 0 35px;
         }
 
@@ -409,6 +399,34 @@
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: .12em;
+        }
+
+        .result-status-card {
+            border-top-color: var(--cyan);
+        }
+
+        .result-status-card.status-finished {
+            border-top-color: #fb7185;
+        }
+
+        .result-status-card strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--cyan);
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+
+        .result-status-card.status-finished strong {
+            color: #fb7185;
+        }
+
+        .result-status-card small {
+            display: block;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.5;
         }
 
         .progress-row {
@@ -525,10 +543,6 @@
             color: #151a33;
         }
 
-        html:not(.dark) .hero-card {
-            background: rgba(255, 255, 255, .78);
-        }
-
         html:not(.dark) .home-section {
             background: radial-gradient(ellipse at 52% 5%, rgba(61, 77, 255, .14), transparent 42%), #f5f7fc;
         }
@@ -576,19 +590,11 @@
 
             .pilketos-hero,
             .home-section {
-                padding: 65px 24px;
+                padding: 24px 24px 56px;
             }
 
             .pilketos-hero {
-                min-height: 790px;
-            }
-
-            .hero-card {
-                position: relative;
-                top: auto;
-                right: auto;
-                width: auto;
-                margin: 48px 0 0;
+                min-height: auto;
             }
 
             .hero-title {
@@ -624,37 +630,32 @@
     <div class="pilketos-home">
         <div class="pilketos-shell">
             <section class="pilketos-hero">
-                <div class="hero-card"><span class="hero-kicker">PILKETOS</span>
-                    <h2>Suara yang membentuk masa depan sekolah.</h2>
-                    <p>Platform pemilihan Ketua OSIS yang dirancang untuk proses demokrasi yang jujur, aman, dan mudah
-                        diikuti.</p><strong>{{ $resultParticipation }}%</strong><small>partisipasi terdata</small>
-                </div>
-                <p class="hero-kicker">E-Voting resmi {{ $settings['school_name'] }}</p>
+                <p class="hero-kicker">PILKETOS resmi {{ $settings['school_name'] }}</p>
                 <h1 class="hero-title">Pilih pemimpin<br><span class="display-serif">masa depan.</span></h1>
                 <p class="hero-copy"><strong>Setiap suara punya arti.</strong> Kenali kandidat, pahami visi mereka, lalu
                     gunakan hak pilihmu secara <em>jujur, adil, dan transparan.</em></p>
-                <div class="stats-grid">
-                    <div class="stat">
-                        <p class="stat-number">{{ $elections->count() }}</p>
-                        <p class="stat-label">Periode pemilihan</p>
-                        <p class="stat-note">Seluruh agenda pemilihan yang tersedia.</p>
-                    </div>
-                    <div class="stat">
-                        <p class="stat-number">{{ $resultCandidates->count() }}</p>
-                        <p class="stat-label">Kandidat pilihan</p>
-                        <p class="stat-note">Calon pemimpin dengan visi untuk sekolah.</p>
-                    </div>
-                    <div class="stat">
-                        <p class="stat-number">{{ $resultTotalVotes }}</p>
-                        <p class="stat-label">Suara tercatat</p>
-                        <p class="stat-note">Data suara tersimpan secara aman.</p>
-                    </div>
+                <a href="#pemilihan" class="hero-cta">Lihat Kandidat</a>
+            </section>
+            <section id="panduan" class="home-section" style="background:#15161c;">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">01 / Panduan</p>
+                        <h2>Empat langkah<br><span class="display-serif">satu suara.</span></h2>
+                    </div><a href="{{ route('guide') }}" class="home-link">Panduan lengkap</a>
+                </div>
+                <div class="guide-grid">
+                    @foreach ([['01', 'Login', 'Masuk menggunakan akun yang terdaftar.'], ['02', 'Kenali kandidat', 'Baca visi, misi, dan profil kandidat.'], ['03', 'Masukkan token', 'Gunakan token pemilihan yang valid.'], ['04', 'Kirim suara', 'Periksa pilihan lalu konfirmasi.']] as $step)
+                        <div class="guide-item"><span class="guide-number">{{ $step[0] }}</span>
+                            <h3>{{ $step[1] }}</h3>
+                            <p>{{ $step[2] }}</p>
+                        </div>
+                    @endforeach
                 </div>
             </section>
             <section id="pemilihan" class="home-section">
                 <div class="section-heading">
                     <div>
-                        <p class="eyebrow">01 / Pemilihan</p>
+                        <p class="eyebrow">02 / Pemilihan</p>
                         <h2>Temukan<br><span class="display-serif">pilihanmu.</span></h2>
                     </div>
                     <p>Telusuri periode yang sedang berlangsung dan kenali kandidat terbaik untuk mewakili suara siswa.</p>
@@ -662,7 +663,8 @@
                 <div class="election-grid">
                     @forelse ($elections as $election)
                         <a href="{{ route('election.show', $election) }}" class="election-card">
-                            <span class="election-card-status">{{ $election->current_status }}</span>
+                            <span
+                                class="election-card-status {{ $election->current_status === \App\Models\Election::STATUS_FINISHED ? 'status-finished' : '' }}">{{ $election->current_status }}</span>
                             <div class="election-visual">
                                 @if ($election->banner_url)
                                     <img src="{{ $election->banner_url }}" alt="Gambar {{ $election->title }}"
@@ -681,60 +683,74 @@
                     @endforelse
                 </div>
             </section>
-            <section id="panduan" class="home-section" style="background:#15161c;">
+            <section id="hasil" class="home-section">
                 <div class="section-heading">
                     <div>
-                        <p class="eyebrow">02 / Panduan</p>
-                        <h2>Empat langkah<br><span class="display-serif">satu suara.</span></h2>
-                    </div><a href="{{ route('guide') }}" class="home-link">Panduan lengkap</a>
+                        <p class="eyebrow">03 / Hasil</p>
+                        <h2>Suara yang<br><span class="display-serif">terlihat.</span></h2>
+                    </div>
+                    <div class="flex flex-col items-end gap-2 text-right">
+                        <a href="{{ route('results') }}" class="home-link">Semua hasil</a>
+                        @if (!$showVoteCounts && $resultsPublishAt)
+                            <div data-landing-countdown-wrap>
+                                <span
+                                    class="block text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Total
+                                    suara tampil dalam</span>
+                                <strong data-landing-countdown
+                                    class="mt-1 block text-sm font-semibold text-cyan-500"></strong>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-                <div class="guide-grid">
-                    @foreach ([['01', 'Login', 'Masuk menggunakan akun yang terdaftar.'], ['02', 'Kenali kandidat', 'Baca visi, misi, dan profil kandidat.'], ['03', 'Masukkan token', 'Gunakan token pemilihan yang valid.'], ['04', 'Kirim suara', 'Periksa pilihan lalu konfirmasi.']] as $step)
-                        <div class="guide-item"><span class="guide-number">{{ $step[0] }}</span>
-                            <h3>{{ $step[1] }}</h3>
-                            <p>{{ $step[2] }}</p>
+                @if (!$showVoteCounts && $resultsPublishAt)
+                    <p data-landing-reveal-message class="mt-4 text-sm text-slate-500 dark:text-slate-400">Total suara
+                        akan ditampilkan pada
+                        {{ \Illuminate\Support\Carbon::parse($resultsPublishAt)->translatedFormat('d F Y, H:i') }}.</p>
+                @endif
+                <div class="result-strip">
+                    <div data-landing-total-card class="result-stat {{ $showVoteCounts ? '' : 'hidden' }}"><b
+                            data-landing-total>{{ $resultTotalVotes }}</b><span>Total suara</span></div>
+                    @if ($resultElection)
+                        <div
+                            class="result-stat result-status-card {{ $resultElection->current_status === \App\Models\Election::STATUS_FINISHED ? 'status-finished' : '' }}">
+                            <span>Status pemilihan</span>
+                            <strong>{{ $resultElection->current_status }}</strong>
+                            <small>
+                                Mulai {{ $resultElection->start_time->translatedFormat('d M Y, H:i') }}<br>
+                                Selesai {{ $resultElection->end_time->translatedFormat('d M Y, H:i') }}
+                            </small>
                         </div>
-                    @endforeach
+                    @endif
                 </div>
-            </section>
-            @if (($settings['show_statistics'] ?? '1') === '1')
-                <section id="hasil" class="home-section">
-                    <div class="section-heading">
-                        <div>
-                            <p class="eyebrow">03 / Hasil</p>
-                            <h2>Suara yang<br><span class="display-serif">terlihat.</span></h2>
-                        </div><a href="{{ route('results') }}" class="home-link">Semua hasil</a>
-                    </div>
-                    <div class="result-strip">
-                        <div class="result-stat"><b>{{ $resultTotalVotes }}</b><span>Total suara</span></div>
-                        <div class="result-stat"><b>{{ $resultVoterCount }}</b><span>Pemilih terdaftar</span></div>
-                        <div class="result-stat"><b>{{ $resultParticipation }}%</b><span>Tingkat partisipasi</span></div>
-                    </div>
-                    @forelse ($resultCandidates as $candidate)
-                        @php($candidatePercent = $resultTotalVotes > 0 ? round(($candidate->votes_count / $resultTotalVotes) * 100) : 0)
-                        <div class="progress-row">
-                            @if ($candidate->photo_url)
-                                <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}"
-                                    class="progress-candidate-photo" loading="lazy">
-                            @else
-                                <span class="progress-candidate-fallback" aria-hidden="true">
-                                    {{ str($candidate->name)->substr(0, 1)->upper() }}
-                                </span>
-                            @endif
-                            <div class="progress-details">
-                                <div class="progress-label">
-                                    <span class="progress-candidate">{{ $candidate->name }}</span>
-                                    <span>{{ $candidatePercent }}% / {{ $candidate->votes_count }} suara</span>
-                                </div>
-                                <div class="progress-track">
-                                    <div class="progress-value" style="width:{{ $candidatePercent }}%"></div>
+                @php($maxCandidateVotes = $resultCandidates->max('votes_count') ?? 0)
+                @forelse ($resultCandidates as $candidate)
+                    <div class="progress-row">
+                        @if ($candidate->photo_url)
+                            <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}"
+                                class="progress-candidate-photo" loading="lazy">
+                        @else
+                            <span class="progress-candidate-fallback" aria-hidden="true">
+                                {{ str($candidate->name)->substr(0, 1)->upper() }}
+                            </span>
+                        @endif
+                        <div class="progress-details">
+                            <div class="progress-label">
+                                <span class="progress-candidate">{{ $candidate->name }}</span>
+                                <span data-landing-candidate-label="{{ $candidate->id }}"
+                                    class="{{ $showVoteCounts ? '' : 'hidden' }}">{{ $candidate->votes_count }}
+                                    suara</span>
+                            </div>
+                            <div class="progress-track">
+                                <div data-landing-candidate-bar="{{ $candidate->id }}"
+                                    class="progress-value {{ $showVoteCounts ? '' : 'invisible' }}"
+                                    style="width:{{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
                                 </div>
                             </div>
                         </div>
-                    @empty<p style="color:var(--muted);font-size:12px;">Belum ada data suara.</p>
-                    @endforelse
-                </section>
-            @endif
+                    </div>
+                @empty<p style="color:var(--muted);font-size:12px;">Belum ada data suara.</p>
+                @endforelse
+            </section>
             <section id="tentang" class="home-section" style="background:#0f1014;">
                 <p class="eyebrow">04 / Tentang PILKETOS</p>
                 <h2
@@ -758,7 +774,7 @@
                             <span
                                 class="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-700 shadow-sm dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
                                 <span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span>
-                                E-Voting Resmi {{ App\Models\SiteSetting::getValue('school_name', 'SMKN 1 Bangsri') }}
+                                PILKETOS Resmi {{ App\Models\SiteSetting::getValue('school_name', 'SMKN 1 Bangsri') }}
                             </span>
                             <h1
                                 class="mt-6 text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
@@ -892,79 +908,63 @@
                 </div>
             </section>
 
-            @if (($settings['show_statistics'] ?? '1') === '1')
-                <section id="hasil" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-                    <div
-                        class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <p
-                                    class="text-sm font-semibold uppercase tracking-[0.25em] text-blue-600 dark:text-blue-400">
-                                    Hasil
-                                    Pemilihan</p>
-                                <h2 class="mt-2 text-3xl font-black text-slate-900 dark:text-white">Statistik Suara</h2>
-                                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                                    {{ $resultElection?->title ?? 'Belum ada data pemilihan' }}
-                                </p>
-                            </div>
-                            <a href="{{ route('results') }}"
-                                class="inline-flex w-fit items-center justify-center rounded-2xl border border-blue-200 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-900 dark:text-blue-300 dark:hover:bg-blue-950/40">
-                                Lihat Semua Hasil
-                            </a>
+            <section id="hasil" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+                <div
+                    class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-blue-600 dark:text-blue-400">
+                                Hasil
+                                Pemilihan</p>
+                            <h2 class="mt-2 text-3xl font-black text-slate-900 dark:text-white">Statistik Suara</h2>
+                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                {{ $resultElection?->title ?? 'Belum ada data pemilihan' }}
+                            </p>
                         </div>
+                        <a href="{{ route('results') }}"
+                            class="inline-flex w-fit items-center justify-center rounded-2xl border border-blue-200 px-5 py-3 font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-900 dark:text-blue-300 dark:hover:bg-blue-950/40">
+                            Lihat Semua Hasil
+                        </a>
+                    </div>
 
-                        <div class="mt-6 grid gap-4 sm:grid-cols-3">
-                            <div class="rounded-2xl bg-blue-50 p-4 dark:bg-blue-950/30">
-                                <p
-                                    class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
-                                    Total
-                                    Suara</p>
-                                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ $resultTotalVotes }}
-                                </p>
-                            </div>
-                            <div class="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
-                                <p
-                                    class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                                    Pemilih</p>
-                                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ $resultVoterCount }}
-                                </p>
-                            </div>
-                            <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30">
-                                <p
-                                    class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
-                                    Partisipasi</p>
-                                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">
-                                    {{ $resultParticipation }}%
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 space-y-4">
-                            @forelse ($resultCandidates as $candidate)
-                                @php($candidatePercent = $resultTotalVotes > 0 ? round(($candidate->votes_count / $resultTotalVotes) * 100) : 0)
-                                <div>
-                                    <div class="mb-2 flex items-center justify-between gap-4 text-sm">
-                                        <span
-                                            class="font-semibold text-slate-900 dark:text-white">{{ $candidate->name }}</span>
-                                        <span class="text-slate-500 dark:text-slate-400">{{ $candidate->votes_count }}
-                                            suara
-                                            ({{ $candidatePercent }}%)
-                                        </span>
-                                    </div>
-                                    <div class="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        <div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-500"
-                                            style="width: {{ $candidatePercent }}%"></div>
-                                    </div>
-                                </div>
-                            @empty
-                                <p
-                                    class="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                    Belum ada data suara.</p>
-                            @endforelse
+                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                        <div data-landing-total-card
+                            class="rounded-2xl bg-blue-50 p-4 dark:bg-blue-950/30 {{ $showVoteCounts ? '' : 'hidden' }}">
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
+                                Total
+                                Suara</p>
+                            <p data-landing-total class="mt-2 text-3xl font-black text-slate-900 dark:text-white">
+                                {{ $resultTotalVotes }}
+                            </p>
                         </div>
                     </div>
-                </section>
-            @endif
+
+                    <div class="mt-6 space-y-4">
+                        @forelse ($resultCandidates as $candidate)
+                            <div>
+                                <div class="mb-2 flex items-center justify-between gap-4 text-sm">
+                                    <span
+                                        class="font-semibold text-slate-900 dark:text-white">{{ $candidate->name }}</span>
+                                    <span data-landing-candidate-label="{{ $candidate->id }}"
+                                        class="text-slate-500 dark:text-slate-400 {{ $showVoteCounts ? '' : 'hidden' }}">{{ $candidate->votes_count }}
+                                        suara
+                                    </span>
+                                </div>
+                                <div class="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                    <div data-landing-candidate-bar="{{ $candidate->id }}"
+                                        class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 {{ $showVoteCounts ? '' : 'invisible' }}"
+                                        style="width:{{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <p
+                                class="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                Belum ada data suara.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </section>
 
             <section id="tentang" class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div
@@ -998,4 +998,62 @@
 
         </div>
     </div>
+    <script>
+        (() => {
+            const dataUrl = @json(route('results.data'));
+            const revealAt = @json($resultsPublishAt ? \Illuminate\Support\Carbon::parse($resultsPublishAt)->toIso8601String() : null);
+            const countdown = document.querySelector('[data-landing-countdown]');
+            const countdownWrap = document.querySelector('[data-landing-countdown-wrap]');
+            const updateCountdown = () => {
+                if (!countdown || !revealAt) return;
+                const remaining = new Date(revealAt).getTime() - Date.now();
+                if (remaining <= 0) {
+                    countdownWrap?.classList.add('hidden');
+                    return;
+                }
+                const totalSeconds = Math.floor(remaining / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor(totalSeconds % 86400 / 3600);
+                const minutes = Math.floor(totalSeconds % 3600 / 60);
+                const seconds = totalSeconds % 60;
+                countdown.textContent =
+                    `${days}h ${String(hours).padStart(2, '0')}j ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}d`;
+            };
+            updateCountdown();
+            window.setInterval(updateCountdown, 1000);
+            const refreshResults = async () => {
+                try {
+                    const response = await fetch(dataUrl, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    document.querySelector('[data-landing-total]')?.replaceChildren(document.createTextNode(data
+                        .total_votes));
+                    document.querySelector('[data-landing-total-card]')?.classList.toggle('hidden', !data
+                        .visible);
+                    const revealMessage = document.querySelector('[data-landing-reveal-message]');
+                    if (revealMessage && data.visible) revealMessage.textContent =
+                        'Total suara sudah ditampilkan.';
+                    const maxVotes = Math.max(...data.candidates.map((candidate) => Number(candidate.votes) ||
+                        0), 0);
+                    data.candidates.forEach((candidate) => {
+                        const label = document.querySelector(
+                            `[data-landing-candidate-label="${candidate.id}"]`);
+                        const bar = document.querySelector(
+                            `[data-landing-candidate-bar="${candidate.id}"]`);
+                        label?.classList.toggle('hidden', !data.visible);
+                        bar?.classList.toggle('invisible', !data.visible);
+                        if (label) label.textContent =
+                            `${candidate.votes} suara`;
+                        if (bar) bar.style.width = maxVotes > 0 ?
+                            `${Math.round((candidate.votes / maxVotes) * 100)}%` : '0%';
+                    });
+                } catch (error) {}
+            };
+            window.setInterval(refreshResults, 5000);
+        })();
+    </script>
 @endsection

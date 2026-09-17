@@ -66,6 +66,10 @@
             background: rgba(27, 30, 44, .8);
         }
 
+        .results-editorial .results-stat.results-stat-finished {
+            border-top-color: #fb7185;
+        }
+
         .results-editorial .results-stat p:last-child {
             color: #f3f5ff;
         }
@@ -75,6 +79,12 @@
             border-radius: 0;
             background: transparent;
             color: #1ee6e1;
+        }
+
+        .results-editorial .results-status.results-status-finished {
+            border-color: rgba(251, 113, 133, .7);
+            background: rgba(251, 113, 133, .08);
+            color: #fb7185;
         }
 
         .results-editorial .results-track {
@@ -162,45 +172,59 @@
             <div class="results-panel">
                 <p class="results-kicker">03 / Hasil Pemilihan</p>
                 <h1 class="results-title">Statistik<br><em style="font-family:Georgia,serif;">suara.</em></h1>
-
                 <div class="mt-10 space-y-8">
                     @forelse($elections as $election)
                         @php
                             $totalVotes = $election->votes_count;
-                            $participation = $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0;
+                            $maxCandidateVotes = $election->candidates->max('votes_count') ?? 0;
+                            $electionShowVoteCounts = $election->publicResultsVisible();
                         @endphp
                         <section class="results-election">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <h2>{{ $election->title }}</h2>
-                                    <p class="results-muted mt-2 text-sm">Tahun {{ $election->year }}</p>
                                 </div>
-                                <span class="results-status w-fit px-3 py-2 text-xs font-semibold uppercase">
-                                    {{ $election->current_status }}
-                                </span>
+                                <div class="flex flex-col items-start gap-3 sm:items-end">
+                                    <span
+                                        class="results-status w-fit px-3 py-2 text-xs font-semibold uppercase {{ $election->current_status === \App\Models\Election::STATUS_FINISHED ? 'results-status-finished' : '' }}">
+                                        {{ $election->current_status }}
+                                    </span>
+                                    @if (!$electionShowVoteCounts && $election->results_publish_at)
+                                        <div class="text-left sm:text-right">
+                                            <span class="results-muted block text-[10px] uppercase tracking-[0.15em]">Total
+                                                suara tampil dalam</span>
+                                            <strong data-election-countdown="{{ $election->id }}"
+                                                data-reveal-at="{{ $election->results_publish_at->toIso8601String() }}"
+                                                class="mt-1 block text-sm text-cyan-400"></strong>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
 
-                            <div class="mt-6 grid gap-4 sm:grid-cols-3">
-                                <div class="results-stat rounded-2xl p-4">
-                                    <p class="results-muted text-xs font-semibold uppercase tracking-[0.2em]">
-                                        Total Suara</p>
-                                    <p class="mt-2 text-3xl font-black">{{ $totalVotes }}</p>
-                                </div>
-                                <div class="results-stat rounded-2xl p-4">
-                                    <p class="results-muted text-xs font-semibold uppercase tracking-[0.2em]">
-                                        Pemilih</p>
-                                    <p class="mt-2 text-3xl font-black">{{ $voterCount }}</p>
-                                </div>
-                                <div class="results-stat rounded-2xl p-4">
-                                    <p class="results-muted text-xs font-semibold uppercase tracking-[0.2em]">
-                                        Partisipasi</p>
-                                    <p class="mt-2 text-3xl font-black">{{ $participation }}%</p>
+                            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                                @if ($electionShowVoteCounts)
+                                    <div class="results-stat rounded-2xl p-4">
+                                        <p class="results-muted text-xs font-semibold uppercase tracking-[0.2em]">Total
+                                            Suara</p>
+                                        <p class="mt-2 text-3xl font-black">{{ $totalVotes }}</p>
+                                    </div>
+                                @endif
+                                <div
+                                    class="results-stat rounded-2xl p-4 {{ $election->current_status === \App\Models\Election::STATUS_FINISHED ? 'results-stat-finished' : '' }}">
+                                    <p class="results-muted text-xs font-semibold uppercase tracking-[0.2em]">Status &amp;
+                                        Jadwal</p>
+                                    <p class="mt-2 text-lg font-black">{{ $election->current_status }}</p>
+                                    <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                                        <div class="results-muted space-y-1 text-xs">
+                                            <p>Mulai: {{ $election->start_time->translatedFormat('d M Y, H:i') }}</p>
+                                            <p>Selesai: {{ $election->end_time->translatedFormat('d M Y, H:i') }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="mt-7 space-y-5">
                                 @forelse($election->candidates as $candidate)
-                                    @php($candidatePercent = $totalVotes > 0 ? round(($candidate->votes_count / $totalVotes) * 100) : 0)
                                     <div class="flex items-center gap-3">
                                         @if ($candidate->photo_url)
                                             <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}"
@@ -212,11 +236,15 @@
                                         <div class="min-w-0 flex-1">
                                             <div class="mb-2 flex items-center justify-between gap-4 text-sm">
                                                 <span class="font-semibold">{{ $candidate->name }}</span>
-                                                <span class="results-muted whitespace-nowrap">{{ $candidate->votes_count }}
-                                                    suara ({{ $candidatePercent }}%)</span>
+                                                @if ($electionShowVoteCounts)
+                                                    <span
+                                                        class="results-muted whitespace-nowrap">{{ $candidate->votes_count }}
+                                                        suara</span>
+                                                @endif
                                             </div>
                                             <div class="results-track overflow-hidden">
-                                                <div class="results-value h-full" style="width: {{ $candidatePercent }}%">
+                                                <div class="results-value h-full {{ $electionShowVoteCounts ? '' : 'invisible' }}"
+                                                    style="width: {{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
                                                 </div>
                                             </div>
                                         </div>
@@ -238,3 +266,36 @@
     </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (() => {
+            let shouldReload = false;
+
+            const updateCountdowns = () => {
+                document.querySelectorAll('[data-election-countdown]').forEach((countdown) => {
+                    const revealAt = new Date(countdown.dataset.revealAt);
+                    const remaining = Math.max(0, revealAt.getTime() - Date.now());
+                    const totalSeconds = Math.floor(remaining / 1000);
+                    const days = Math.floor(totalSeconds / 86400);
+                    const hours = Math.floor((totalSeconds % 86400) / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+
+                    if (remaining > 0) {
+                        countdown.textContent =
+                            `${days} hari ${String(hours).padStart(2, '0')} jam ${String(minutes).padStart(2, '0')} menit ${String(seconds).padStart(2, '0')} detik`;
+                    } else {
+                        countdown.textContent = 'Total suara sudah ditampilkan';
+                        shouldReload = true;
+                    }
+                });
+
+                if (shouldReload) window.location.reload();
+            };
+
+            updateCountdowns();
+            window.setInterval(updateCountdowns, 1000);
+        })();
+    </script>
+@endpush

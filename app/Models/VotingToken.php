@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VotingToken extends Model
 {
+    protected $casts = [
+        'user_id' => 'integer',
+        'election_id' => 'integer',
+        'used_at' => 'datetime',
+    ];
+
     protected $fillable = [
         'user_id',
         'election_id',

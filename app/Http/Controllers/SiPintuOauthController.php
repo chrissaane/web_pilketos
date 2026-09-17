@@ -42,7 +42,7 @@ class SiPintuOauthController extends Controller
 
         $storedState = $request->session()->get('sipintu_oauth_state');
 
-        if ($storedState && $state !== $storedState) {
+        if (! $storedState || ! hash_equals($storedState, (string) $state)) {
             return redirect()->route('login')->withErrors([
                 'identity' => 'State OAuth SiPintu tidak valid.',
             ]);
@@ -84,6 +84,7 @@ class SiPintuOauthController extends Controller
         return match ($user->role) {
             'admin' => redirect()->route('admin.dashboard'),
             'guru' => redirect()->route('guru.dashboard'),
+            'karyawan' => redirect()->route('guru.dashboard'),
             'siswa' => redirect()->route('siswa.dashboard'),
             default => redirect()->route('home'),
         };

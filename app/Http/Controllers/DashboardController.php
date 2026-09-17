@@ -23,7 +23,7 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'guru') {
+        if (in_array($user->role, ['guru', 'karyawan'], true)) {
             return redirect()->route('guru.dashboard');
         }
 
@@ -101,7 +101,7 @@ class DashboardController extends Controller
         $eligibleVoters = User::query()->eligibleVoters()->get();
         $voterCount = $eligibleVoters->count();
         $siswaCount = $eligibleVoters->where('role', 'siswa')->count();
-        $guruCount = $eligibleVoters->where('role', 'guru')->count();
+        $guruCount = $eligibleVoters->whereIn('role', ['guru', 'karyawan'])->count();
         $onlineCount = $eligibleVoters->where('is_active', true)->count();
 
         $selectedElectionVotes = $selectedElection
@@ -263,6 +263,8 @@ class DashboardController extends Controller
         $totalVotes = array_sum($chartData);
         $voterCount = User::query()->eligibleVoters()->count();
         $participation = $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0;
+        $resultsPublishAt = $selectedElection?->results_publish_at;
+        $showVoteCountsPublic = $selectedElection?->show_vote_counts_public ?? true;
 
         return view('admin.statistics.index', compact(
             'elections',
@@ -272,27 +274,77 @@ class DashboardController extends Controller
             'candidateRows',
             'totalVotes',
             'voterCount',
-            'participation'
+            'participation',
+            'resultsPublishAt',
+            'showVoteCountsPublic'
         ));
+    }
+
+    public function adminStatisticsData(Request $request)
+    {
+        $selectedElection = $request->filled('election_id')
+            ? Election::find($request->integer('election_id'))
+            : Election::query()->latest('start_time')->first();
+        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
+        $candidates = $selectedElection
+            ? $selectedElection->candidates()
+                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
+                ->orderBy('candidate_number')
+                ->get()
+            : collect();
+        $totalVotes = $candidates->sum('votes_count');
+        $voterCount = $eligibleVoterIds->count();
+
+        return response()->json([
+            'total_votes' => $totalVotes,
+            'voter_count' => $voterCount,
+            'participation' => $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0,
+            'candidates' => $candidates->map(fn ($candidate) => [
+                'id' => $candidate->id,
+                'votes' => $candidate->votes_count,
+                'percent' => $totalVotes > 0 ? round(($candidate->votes_count / $totalVotes) * 100) : 0,
+            ])->values(),
+        ]);
     }
 
     public function store(VoteRequest $request)
     {
         $user = Auth::user();
+        $expectsJson = $request->expectsJson();
+
         if (SiteSetting::getValue('election_active', '1') !== '1') {
+            if ($expectsJson) {
+                return response()->json(['success' => false, 'message' => 'Sistem pemilihan sedang dinonaktifkan oleh admin.'], 422);
+            }
+
             return back()->with('error', 'Sistem pemilihan sedang dinonaktifkan oleh admin.');
         }
 
-        $election = Election::findOrFail($request->input('election_id'));
-        $candidate = Candidate::findOrFail($request->input('candidate_id'));
+        $election = Election::find($request->input('election_id'));
+        $candidate = Candidate::query()
+            ->whereKey($request->input('candidate_id'))
+            ->where('election_id', $request->input('election_id'))
+            ->first();
+
+        if (! $election || ! $candidate) {
+            if ($expectsJson) {
+                return response()->json(['success' => false, 'message' => 'Data pemilihan atau kandidat tidak valid.'], 422);
+            }
+
+            return back()->with('error', 'Data pemilihan atau kandidat tidak valid.');
+        }
 
         if ($election->current_status !== Election::STATUS_ACTIVE) {
+            if ($expectsJson) {
+                return response()->json(['success' => false, 'message' => 'Pemilihan ini sudah berakhir atau belum aktif.'], 422);
+            }
+
             return back()->with('error', 'Pemilihan ini sudah berakhir atau belum aktif.');
         }
 
         $alreadyVoted = Vote::query()->where('election_id', $election->id)->where('user_id', $user->id)->exists();
         if ($alreadyVoted) {
-            if ($request->expectsJson()) {
+            if ($expectsJson) {
                 return response()->json(['success' => false, 'message' => 'Anda sudah menggunakan hak pilih pada periode ini.'], 422);
             }
 
@@ -302,34 +354,22 @@ class DashboardController extends Controller
         // Verify voting token (normalize input)
         $tokenInput = $request->input('token');
         $tokenNormalized = strtoupper(trim((string) $tokenInput));
-        $votingToken = \App\Models\VotingToken::query()->where('token', $tokenNormalized)->first();
+        $votingToken = \App\Models\VotingToken::query()
+            ->where('token', $tokenNormalized)
+            ->where('user_id', $user->id)
+            ->where('election_id', $election->id)
+            ->first();
 
         if (! $votingToken) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Token tidak ditemukan.'], 422);
+            if ($expectsJson) {
+                return response()->json(['success' => false, 'message' => 'Token tidak sesuai dengan pengguna atau periode pemilihan ini.'], 422);
             }
 
-            return back()->with('error', 'Token tidak ditemukan.');
-        }
-
-        if ($votingToken->user_id !== $user->id) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Token tidak sesuai dengan pengguna saat ini.'], 403);
-            }
-
-            return back()->with('error', 'Token tidak sesuai dengan pengguna saat ini.');
-        }
-
-        if ($votingToken->election_id !== $election->id) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Token tidak berlaku untuk periode pemilihan ini.'], 422);
-            }
-
-            return back()->with('error', 'Token tidak berlaku untuk periode pemilihan ini.');
+            return back()->with('error', 'Token tidak sesuai dengan pengguna atau periode pemilihan ini.');
         }
 
         if ($votingToken->used_at) {
-            if ($request->expectsJson()) {
+            if ($expectsJson) {
                 return response()->json(['success' => false, 'message' => 'Token sudah digunakan.'], 422);
             }
 
@@ -350,14 +390,16 @@ class DashboardController extends Controller
                 $votingToken->save();
             });
         } catch (\Throwable $exception) {
-            if ($request->expectsJson()) {
+            report($exception);
+
+            if ($expectsJson) {
                 return response()->json(['success' => false, 'message' => 'Gagal menyimpan suara. Silakan coba lagi.'], 500);
             }
 
             return back()->with('error', 'Gagal menyimpan suara. Silakan coba lagi.');
         }
 
-        if ($request->expectsJson()) {
+        if ($expectsJson) {
             return response()->json(['success' => true, 'message' => 'Suara Anda berhasil tersimpan.']);
         }
 

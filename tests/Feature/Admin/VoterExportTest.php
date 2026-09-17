@@ -8,6 +8,100 @@ use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
+test('import parser accepts simple excel columns without birth date', function () {
+    $import = new \App\Imports\VoterImport(true);
+
+    $import->collection(collect([
+        [
+            'Nama' => 'Budi Santoso',
+            'Kelas' => 'XII PPLG 2',
+            'NIS / NIP' => '20261234',
+            'Email' => 'budi@example.com',
+        ],
+        [
+            'Nama' => 'Ibu Sari',
+            'Kelas' => '',
+            'NIS / NIP' => '19870001',
+            'Email' => 'sari@example.com',
+        ],
+    ]));
+
+    expect($import->previewRows)->toHaveCount(2)
+        ->and($import->previewRows[0]['identity_number'])->toBe('20261234')
+        ->and($import->previewRows[0]['role'])->toBe('siswa')
+        ->and($import->previewRows[0]['class_group'])->toBe('12')
+        ->and($import->previewRows[0]['major'])->toBe('PPLG 2')
+        ->and($import->previewRows[1]['role'])->toBe('guru')
+        ->and($import->previewRows[1]['identity_number'])->toBe('19870001');
+});
+
+test('direct import creates voter records without preview step', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'identity_number' => 'ADMIN-IMPORT',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin);
+
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->fromArray([
+        ['Nama', 'Kelas', 'NIS / NIP', 'Email'],
+        ['Budi Santoso', 'XII PPLG 2', '20261234', 'budi@example.com'],
+        ['Ibu Sari', '', '19870001', 'sari@example.com'],
+    ], null, 'A1');
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $tempFile = tempnam(sys_get_temp_dir(), 'voter_import_');
+    $xlsxPath = $tempFile . '.xlsx';
+    unlink($tempFile);
+    $writer->save($xlsxPath);
+
+    $file = new \Illuminate\Http\UploadedFile(
+        $xlsxPath,
+        'import_voters.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        null,
+        true
+    );
+
+    $response = $this->post(route('admin.import.store'), ['file' => $file, 'direct_import' => '1']);
+
+    $response->assertRedirect(route('admin.voters.index'))
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseHas('users', ['identity_number' => '20261234', 'role' => 'siswa']);
+    $this->assertDatabaseHas('users', ['identity_number' => '19870001', 'role' => 'guru']);
+
+    @unlink($xlsxPath);
+});
+
+test('admin can delete a voter by identity number', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'identity_number' => 'ADMIN-DELETE',
+        'is_active' => true,
+    ]);
+
+    $voter = User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026999',
+        'name' => 'Voter Akan Dihapus',
+        'class_group' => '12',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin);
+
+    $response = $this->delete(route('admin.voters.destroy', $voter->identity_number));
+
+    $response->assertRedirect(route('admin.voters.index'))
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseMissing('users', ['id' => $voter->id]);
+});
+
 test('admin can open voter index even when voting tokens table is missing', function () {
     $admin = User::factory()->create([
         'role' => 'admin',
@@ -282,27 +376,31 @@ test('gateway imports all paginated siPintu students and teachers', function () 
         ->and($result['teachers'])->toBe(2);
 });
 
-test('admin can download voter credentials excel for the selected filter', function () {
+test('admin can download voter credentials excel for the selected class and major filter', function () {
     $admin = User::factory()->create([
         'role' => 'admin',
         'identity_number' => 'ADMIN-001',
         'is_active' => true,
     ]);
 
-    $student = User::factory()->create([
+    User::factory()->create([
         'role' => 'siswa',
         'identity_number' => '2026001',
-        'name' => 'Siswa Test',
+        'name' => 'Siswa PPLG 1',
+        'class_group' => '12',
+        'major' => 'PPLG 1',
         'is_active' => true,
         'birth_date' => '2008-01-01',
     ]);
 
-    $teacher = User::factory()->create([
-        'role' => 'guru',
-        'identity_number' => '1987001',
-        'name' => 'Guru Test',
+    User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '2026002',
+        'name' => 'Siswa PPLG 2',
+        'class_group' => '12',
+        'major' => 'PPLG 2',
         'is_active' => true,
-        'birth_date' => '1975-01-01',
+        'birth_date' => '2008-02-01',
     ]);
 
     $election = Election::create([
@@ -314,22 +412,11 @@ test('admin can download voter credentials excel for the selected filter', funct
         'status' => Election::STATUS_ACTIVE,
     ]);
 
-    VotingToken::create([
-        'user_id' => $student->id,
-        'election_id' => $election->id,
-        'token' => 'STUDENT-TOKEN-001',
-    ]);
+    $export = new \App\Exports\VoterCredentialsExport('kelas_12_pplg_1');
+    $method = new ReflectionMethod($export, 'buildRows');
+    $rows = $method->invoke($export);
 
-    VotingToken::create([
-        'user_id' => $teacher->id,
-        'election_id' => $election->id,
-        'token' => 'TEACHER-TOKEN-001',
-    ]);
-
-    $this->actingAs($admin);
-
-    $response = $this->get(route('admin.voters.export', ['filter' => 'siswa']));
-
-    $response->assertOk()
-        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect($rows)->toHaveCount(2)
+        ->and($rows[1][0])->toBe('2026001')
+        ->and($rows[1][1])->toBe('2008-01-01');
 });

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 class Candidate extends Model
@@ -27,12 +29,14 @@ class Candidate extends Model
         'photo_paths' => 'array',
     ];
 
-    public function election()
+    /** @return BelongsTo<Election, $this> */
+    public function election(): BelongsTo
     {
         return $this->belongsTo(Election::class);
     }
 
-    public function votes()
+    /** @return HasMany<Vote, $this> */
+    public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
     }
@@ -42,6 +46,7 @@ class Candidate extends Model
         return $this->photo_urls[0] ?? null;
     }
 
+    /** @return array<int, string> */
     public function getPhotoUrlsAttribute(): array
     {
         $paths = $this->photo_paths ?: ($this->photo_path ? [$this->photo_path] : []);

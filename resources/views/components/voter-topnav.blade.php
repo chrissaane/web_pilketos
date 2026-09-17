@@ -7,9 +7,8 @@
             <i class="fa-solid fa-bars"></i>
         </button>
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Portal Pemilih</p>
-            <h1 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                {{ request()->routeIs('history') ? 'History Pemilihan' : (Auth::user()->role === 'guru' ? 'Dashboard Guru' : 'Dashboard Siswa') }}
+            <h1 class="text-lg font-bold text-slate-900 dark:text-white">
+                {{ request()->routeIs('history') ? 'History Pemilihan' : (in_array(Auth::user()->role, ['guru', 'karyawan'], true) ? 'Dashboard Guru/Karyawan' : 'Dashboard Siswa') }}
             </h1>
         </div>
     </div>

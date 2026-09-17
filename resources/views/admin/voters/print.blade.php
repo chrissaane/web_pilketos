@@ -67,17 +67,22 @@
     <div class="no-print sticky top-0 z-50 border-b border-slate-200 bg-white p-4 shadow-sm">
         <div class="mx-auto max-w-6xl flex items-center justify-between gap-3">
             <div>
-                <h2 class="text-lg font-bold text-slate-900">Preview Cetak Data Kredensial Pemilih</h2>
+                <h2 class="text-lg font-bold text-slate-900">Preview Data Kredensial Pemilih</h2>
                 <p class="text-sm text-slate-500">
                     Filter: <span class="font-semibold">{{ $filters[$selectedFilter] ?? 'Semua' }}</span>
                 </p>
             </div>
             <div class="flex gap-2">
-                <button onclick="window.print()"
-                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                    <i class="fa-solid fa-print"></i>
-                    Cetak
-                </button>
+                <form action="{{ route('admin.voters.regenerate_passwords') }}" method="POST"
+                    onsubmit="return confirm('Regenerasi password pemilih untuk filter ini?');" class="inline-block">
+                    @csrf
+                    <input type="hidden" name="filter" value="{{ $selectedFilter }}">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Regenerasi Password
+                    </button>
+                </form>
                 <a href="{{ route('admin.voters.index', ['filter' => $selectedFilter]) }}"
                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                     <i class="fa-solid fa-arrow-left"></i>
@@ -152,11 +157,16 @@
     <!-- No-Print Bottom Action -->
     <div class="no-print border-t border-slate-200 bg-white py-4">
         <div class="mx-auto max-w-6xl flex justify-center gap-2">
-            <button onclick="window.print()"
-                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                <i class="fa-solid fa-print"></i>
-                Cetak Sekarang
-            </button>
+            <form action="{{ route('admin.voters.regenerate_passwords') }}" method="POST"
+                onsubmit="return confirm('Regenerasi password pemilih untuk filter ini?');" class="inline-block">
+                @csrf
+                <input type="hidden" name="filter" value="{{ $selectedFilter }}">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Regenerasi Password
+                </button>
+            </form>
             <a href="{{ route('admin.voters.index', ['filter' => $selectedFilter]) }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 <i class="fa-solid fa-arrow-left"></i>

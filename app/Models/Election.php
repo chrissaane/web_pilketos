@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Election extends Model
 {
@@ -26,45 +27,62 @@ class Election extends Model
         'start_time',
         'end_time',
         'status',
+        'is_published',
+        'results_publish_at',
+        'show_vote_counts_public',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'is_published' => 'boolean',
+        'results_publish_at' => 'datetime',
+        'show_vote_counts_public' => 'boolean',
     ];
 
-    public function candidates()
+    /** @return HasMany<Candidate, $this> */
+    public function candidates(): HasMany
     {
         return $this->hasMany(Candidate::class)->orderBy('candidate_number');
     }
 
-    public function schedules()
+    /** @return HasMany<VotingSchedule, $this> */
+    public function schedules(): HasMany
     {
         return $this->hasMany(VotingSchedule::class);
     }
 
-    public function votes()
+    /** @return HasMany<Vote, $this> */
+    public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
     }
 
-    public static function computeStatus($start, $end): string
-{
-    $now = now();
-
-    if ($now->lt($start)) {
-        return self::STATUS_UPCOMING;
+    public function publicResultsVisible(): bool
+    {
+        return $this->show_vote_counts_public
+            && (! $this->results_publish_at || now()->greaterThanOrEqualTo($this->results_publish_at));
     }
 
-    if ($now->between($start, $end)) {
-        return self::STATUS_ACTIVE;
-    }
+    public static function computeStatus(Carbon|string $start, Carbon|string $end): string
+    {
+        $start = $start instanceof Carbon ? $start : Carbon::parse($start);
+        $end = $end instanceof Carbon ? $end : Carbon::parse($end);
+        $now = Carbon::now(config('app.timezone'));
 
-    return self::STATUS_FINISHED;
-}
+        if ($now->isBefore($start)) {
+            return self::STATUS_UPCOMING;
+        }
+
+        if ($now->lessThanOrEqualTo($end)) {
+            return self::STATUS_ACTIVE;
+        }
+
+        return self::STATUS_FINISHED;
+    }
     public function getCurrentStatusAttribute(): string
     {
-        if (! $this->start_time || ! $this->end_time) {
+        if (blank($this->start_time) || blank($this->end_time)) {
             return self::STATUS_UPCOMING;
         }
 
@@ -106,20 +124,54 @@ class Election extends Model
                     VotingToken::query()->where('election_id', $election->id)->delete();
                 }
 
+                $existingUserIds = VotingToken::query()
+                    ->where('election_id', $election->id)
+                    ->pluck('user_id')
+                    ->flip()
+                    ->keys()
+                    ->all();
+
+                $existingTokens = VotingToken::query()
+                    ->where('election_id', $election->id)
+                    ->pluck('token')
+                    ->flip()
+                    ->keys()
+                    ->all();
+
+                $rowsToInsert = [];
+                $maxAttempts = 1000;
+
                 foreach ($voters as $voter) {
-                    $exists = VotingToken::query()->where('user_id', $voter->id)->where('election_id', $election->id)->exists();
-                    if ($exists) continue;
+                    if (in_array((int) $voter->id, $existingUserIds, true)) {
+                        continue;
+                    }
 
-                    do {
+                    $token = null;
+                    for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+                        $candidate = strtoupper(Str::random(8));
+
+                        if (! in_array($candidate, $existingTokens, true)) {
+                            $token = $candidate;
+                            $existingTokens[] = $candidate;
+                            break;
+                        }
+                    }
+
+                    if ($token === null) {
                         $token = strtoupper(Str::random(8));
-                        $conflict = VotingToken::query()->where('election_id', $election->id)->where('token', $token)->exists();
-                    } while ($conflict);
+                    }
 
-                    VotingToken::create([
+                    $rowsToInsert[] = [
                         'user_id' => $voter->id,
                         'election_id' => $election->id,
                         'token' => $token,
-                    ]);
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                if ($rowsToInsert !== []) {
+                    VotingToken::query()->insert($rowsToInsert);
                 }
             });
         } catch (\Throwable $e) {

@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CandidateRequest;
 use App\Models\Candidate;
 use App\Models\Election;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class CandidateController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         try {
             $electionId = $request->query('election_id');
@@ -43,7 +46,7 @@ class CandidateController extends Controller
         return view('admin.candidates.index', compact('candidates', 'banners', 'selectedBanner'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request): View|RedirectResponse
     {
         try {
             $banners = Election::withCount('candidates')->orderBy('title')->get();
@@ -58,7 +61,7 @@ class CandidateController extends Controller
         return view('admin.candidates.create', compact('banners', 'selectedBanner'));
     }
 
-    public function store(CandidateRequest $request)
+    public function store(CandidateRequest $request): RedirectResponse
     {
         $data = $request->validated();
 
@@ -79,10 +82,10 @@ class CandidateController extends Controller
             ->with('success', 'Kandidat berhasil ditambahkan.');
     }
 
-    public function show($id)
+    public function show(Candidate $candidate): View|RedirectResponse
     {
         try {
-            $candidate = Candidate::with('election')->findOrFail($id);
+            $candidate->load('election');
         } catch (\Exception $e) {
             logger()->error('Candidate show failed: ' . $e->getMessage());
             return redirect()->route('admin.candidates.index')->with('error', 'Gagal mengambil data kandidat.');
@@ -91,10 +94,9 @@ class CandidateController extends Controller
         return view('admin.candidates.show', compact('candidate'));
     }
 
-    public function edit($id)
+    public function edit(Candidate $candidate): View|RedirectResponse
     {
         try {
-            $candidate = Candidate::findOrFail($id);
             $banners = Election::withCount('candidates')->orderBy('title')->get();
         } catch (\Exception $e) {
             logger()->error('Candidate edit failed: ' . $e->getMessage());
@@ -104,9 +106,8 @@ class CandidateController extends Controller
         return view('admin.candidates.edit', compact('candidate', 'banners'));
     }
 
-    public function update(CandidateRequest $request, $id)
+    public function update(CandidateRequest $request, Candidate $candidate): RedirectResponse
     {
-        $candidate = Candidate::findOrFail($id);
         $data = $request->validated();
 
         if ((int) $data['election_id'] !== (int) $candidate->election_id) {
@@ -144,7 +145,7 @@ class CandidateController extends Controller
             ->with('success', 'Kandidat berhasil diperbarui.');
     }
 
-    public function destroyPhoto(Request $request, Candidate $candidate)
+    public function destroyPhoto(Request $request, Candidate $candidate): JsonResponse
     {
         $photoPaths = collect($candidate->photo_paths ?: [$candidate->photo_path])
             ->filter()
@@ -153,7 +154,7 @@ class CandidateController extends Controller
         $photoIndex = $request->integer('photo_index', -1);
         $photoPath = $photoPaths[$photoIndex] ?? null;
 
-        abort_unless($photoPath, 404);
+        abort_unless($photoPath !== null, 404);
 
         $remainingPhotoPaths = array_values(array_diff($photoPaths, [$photoPath]));
         Storage::disk('public')->delete($photoPath);
@@ -165,9 +166,8 @@ class CandidateController extends Controller
         return response()->json(['message' => 'Foto kandidat berhasil dihapus.']);
     }
 
-    public function destroy($id)
+    public function destroy(Candidate $candidate): RedirectResponse
     {
-        $candidate = Candidate::findOrFail($id);
         $electionId = $candidate->election_id;
 
         Storage::disk('public')->delete($candidate->photo_paths ?: array_filter([$candidate->photo_path]));

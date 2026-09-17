@@ -122,6 +122,16 @@
             border-color: rgba(255, 255, 255, .14);
             background: #1b1e2c;
             color: #f3f5ff;
+            color-scheme: dark;
+        }
+
+        html.dark .login-editorial .login-input:-webkit-autofill,
+        html.dark .login-editorial .login-input:-webkit-autofill:hover,
+        html.dark .login-editorial .login-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #f3f5ff;
+            -webkit-box-shadow: 0 0 0 1000px #1b1e2c inset;
+            box-shadow: 0 0 0 1000px #1b1e2c inset;
+            caret-color: #f3f5ff;
         }
 
         html.dark .login-editorial .login-input:focus {
@@ -158,7 +168,7 @@
         <div class="login-panel w-full space-y-6">
 
             <div class="space-y-2">
-                <h2 class="login-title">Portal Masuk</h2>
+                <h2 class="login-title">Login</h2>
             </div>
 
             @if ($errors->any())
@@ -185,27 +195,27 @@
                 <!-- Input NIS / Email -->
                 <div>
                     <label class="login-label">
-                        NIS / Email / Username
+                        NIS / NIP / Email
                     </label>
                     <input type="text" name="identity" value="{{ old('identity') }}" required autofocus
-                        placeholder="NIS / NIP / Gmail" class="login-input">
+                        placeholder="NIS / NIP / Email" class="login-input">
                 </div>
 
-                <!-- Input Password / Tanggal Lahir -->
+                <!-- Input Password -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label class="login-label mb-0">
-                            Password / Tanggal Lahir
+                            Password
                         </label>
-                        <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Contoh: 12/05/2008 atau 2008-05-12</span>
                     </div>
                     <div class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="00/00/0000 atau password Anda"
-                            class="login-input pr-20">
+                        <input :type="showPassword ? 'text' : 'password'" name="password" required
+                            placeholder="Password Anda" class="login-input pr-11">
 
-                        <button type="button" @click="showPassword = !showPassword"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-cyan-300">
-                            <span x-text="showPassword ? 'Sembunyikan' : 'Lihat'"></span>
+                        <button type="button" @click="showPassword = !showPassword" aria-label="Toggle password visibility"
+                            class="absolute inset-y-0 right-3 flex items-center justify-center text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200">
+                            <i x-show="!showPassword" class="fa-solid fa-eye text-base"></i>
+                            <i x-show="showPassword" class="fa-solid fa-eye-slash text-base" style="display: none;"></i>
                         </button>
                     </div>
                 </div>
@@ -221,7 +231,7 @@
 
                 <!-- Submit Button -->
                 <button type="submit" class="login-submit">
-                    Masuk Sekarang
+                    Login
                 </button>
             </form>
 

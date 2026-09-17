@@ -23,6 +23,16 @@
             </div>
         @endif
 
+        @if (session('setup_statistics_card_id'))
+            <form id="setupStatisticsForm" method="POST" action="{{ route('admin.statistics.results_visibility') }}"
+                class="hidden">
+                @csrf
+                <input type="hidden" name="election_id" value="{{ session('setup_statistics_card_id') }}">
+                <input type="hidden" id="statisticsPublishAt" name="results_publish_at">
+                <input type="hidden" id="statisticsShowCounts" name="show_vote_counts_public" value="1">
+            </form>
+        @endif
+
         <div class="grid gap-4 lg:grid-cols-[260px_1fr]">
             <!-- Sidebar: Pilih Card -->
             <aside
@@ -45,7 +55,7 @@
                                 {{ optional($selectedCard)->id === $banner->id
                                     ? 'bg-blue-200/50 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300'
                                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' }}">
-                                    {{ $banner->candidates_count }}/3
+                                    {{ $banner->is_published ? 'Published' : 'Draft' }}
                                 </span>
                             </div>
                         </a>
@@ -80,6 +90,14 @@
                                             Status</div>
                                         <div class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                             {{ $selectedCard->current_status }}</div>
+                                    </div>
+                                    <div
+                                        class="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700/50 dark:bg-slate-800/50">
+                                        <div class="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
+                                            Publikasi</div>
+                                        <div
+                                            class="mt-2 text-sm font-semibold {{ $selectedCard->is_published ? 'text-emerald-600' : 'text-amber-600' }}">
+                                            {{ $selectedCard->is_published ? 'Published' : 'Draft' }}</div>
                                     </div>
                                     <div
                                         class="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700/50 dark:bg-slate-800/50">
@@ -119,6 +137,16 @@
                                             class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
                                             Edit Card
                                         </a>
+                                        @if (!$selectedCard->is_published)
+                                            <form action="{{ route('admin.cards.publish', $selectedCard) }}" method="POST"
+                                                class="inline-flex">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-emerald-700">
+                                                    Publish Card
+                                                </button>
+                                            </form>
+                                        @endif
                                         <form action="{{ route('admin.cards.destroy', $selectedCard) }}" method="POST"
                                             data-confirm="Hapus card ini? Semua kandidat terkait juga akan dihapus."
                                             class="inline-flex">
@@ -220,4 +248,47 @@
 
         <div class="mt-4">{{ $banners->links() }}</div>
     </div>
+
+    @if (session('setup_statistics_card_id') && $selectedCard && $selectedCard->id === session('setup_statistics_card_id'))
+        @push('scripts')
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (!window.Swal) return;
+
+                    const form = document.getElementById('setupStatisticsForm');
+                    const defaultPublishAt = @json($selectedCard->end_time?->format('Y-m-d\TH:i'));
+                    const cardTitle = @json($selectedCard->title);
+
+                    Swal.fire({
+                        title: 'Atur Statistik Card',
+                        html: `
+                            <p class="text-left text-slate-500 mb-4">Atur kapan statistik <strong id="setupStatisticsCardTitle"></strong> dapat dilihat publik.</p>
+                            <label class="block text-left text-xs font-bold uppercase tracking-wide text-slate-500" for="swalStatisticsPublishAt">Tampilkan mulai</label>
+                            <input id="swalStatisticsPublishAt" type="datetime-local" class="swal2-input !m-0 !mt-2 !w-full" value="${defaultPublishAt}">
+                            <label class="mt-4 flex items-center gap-2 text-left text-sm font-semibold text-slate-700" for="swalStatisticsShowCounts">
+                                <input id="swalStatisticsShowCounts" type="checkbox" checked>
+                                Tampilkan jumlah suara ke publik
+                            </label>
+                            <p class="mt-2 text-left text-xs text-slate-500">Kosongkan waktu jika statistik ingin langsung terlihat.</p>
+                        `,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Simpan Jadwal',
+                        cancelButtonText: 'Atur Nanti',
+                        focusConfirm: false,
+                        didOpen: () => {
+                            document.getElementById('setupStatisticsCardTitle').textContent = cardTitle;
+                        },
+                        preConfirm: () => {
+                            document.getElementById('statisticsPublishAt').value = document.getElementById(
+                                'swalStatisticsPublishAt').value;
+                            document.getElementById('statisticsShowCounts').value = document.getElementById(
+                                'swalStatisticsShowCounts').checked ? '1' : '0';
+                            form.submit();
+                        }
+                    });
+                });
+            </script>
+        @endpush
+    @endif
 @endsection
