@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Candidate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +16,7 @@ class CandidateRequest extends FormRequest
     {
         $existingPhotoCount = 0;
         if (! $this->isMethod('post')) {
-            $candidate = Candidate::find($this->route('candidate'));
+            $candidate = $this->route('candidate');
             $existingPhotoCount = count($candidate?->photo_urls ?? []);
         }
 

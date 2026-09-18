@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id" x-data="{ theme: localStorage.getItem('theme') || 'light', mobileMenu: false }" x-init="document.documentElement.classList.toggle('dark', theme === 'dark');
+document.documentElement.classList.add('theme-ready');
 $watch('theme', value => {
     localStorage.setItem('theme', value);
     document.documentElement.classList.toggle('dark', value === 'dark');
@@ -19,6 +20,11 @@ $watch('theme', value => {
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
+        (() => {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        })();
+
         tailwind.config = {
             darkMode: 'class'
         }
@@ -35,6 +41,17 @@ $watch('theme', value => {
         /* Hide elements marked with x-cloak until Alpine initializes */
         [x-cloak] {
             display: none !important;
+        }
+
+        html.theme-ready,
+        html.theme-ready body,
+        html.theme-ready .voter-sidebar,
+        html.theme-ready .voter-topnav,
+        html.theme-ready .voter-editorial,
+        html.theme-ready .voter-panel,
+        html.theme-ready .site-header,
+        html.theme-ready .site-footer {
+            transition: background-color .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease;
         }
 
         .pilketos-swal-popup {

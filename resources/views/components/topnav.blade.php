@@ -16,10 +16,10 @@
         <time class="hidden text-xs text-slate-500 dark:text-slate-400 sm:block"
             x-text="time.toLocaleString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })"></time>
         <div class="hidden h-8 w-px bg-slate-200 dark:bg-slate-800 sm:block"></div>
-        <button type="button" x-on:click="toggleDark()"
+        <button type="button" x-on:click="theme = theme === 'dark' ? 'light' : 'dark'"
             class="flex h-10 w-10 items-center justify-center border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             aria-label="Ganti tema" title="Ganti tema">
-            <i class="fa-solid" :class="dark ? 'fa-sun' : 'fa-moon'"></i>
+            <i class="fa-solid" :class="theme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>
         </button>
         <div class="hidden h-10 w-10 items-center justify-center bg-blue-600 text-sm font-black text-white sm:flex">
             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}

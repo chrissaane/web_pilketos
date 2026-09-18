@@ -1,5 +1,8 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" x-data="{ theme: localStorage.getItem('theme') || 'light', openSidebar: false, time: new Date() }" x-init="document.documentElement.classList.toggle('dark', theme === 'dark');
+document.documentElement.classList.add('theme-ready');
+$watch('theme', value => { localStorage.setItem('theme', value);
+    document.documentElement.classList.toggle('dark', value === 'dark'); })">
 
 <head>
     <meta charset="utf-8">
@@ -19,6 +22,11 @@
 
     <!-- Konfigurasi Tailwind Khusus CDN -->
     <script>
+        (() => {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        })();
+
         tailwind.config = {
             darkMode: 'class', // Ini adalah kunci agar tombol dark mode berfungsi
             theme: {
@@ -29,6 +37,17 @@
     <style>
         [x-cloak] {
             display: none !important;
+        }
+
+        html.theme-ready,
+        html.theme-ready body,
+        html.theme-ready .admin-panel,
+        html.theme-ready .admin-panel .admin-frame,
+        html.theme-ready .admin-panel .admin-content,
+        html.theme-ready .admin-panel .admin-sidebar-inner,
+        html.theme-ready .admin-panel .admin-topnav-header,
+        html.theme-ready .admin-panel .admin-footer {
+            transition: background-color .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease;
         }
 
         .pilketos-swal-popup {
@@ -1025,7 +1044,7 @@
     @stack('head')
 </head>
 
-<body x-data="layout()" x-init="init()" :class="{ 'dark': dark }"
+<body
     class="admin-panel bg-slate-100 min-h-screen text-slate-800 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
     <div class="admin-frame flex min-h-screen min-w-0 overflow-x-hidden bg-slate-100 dark:bg-slate-950">
         <!-- Desktop sidebar -->
@@ -1066,31 +1085,6 @@
         </div>
     </div>
 
-    <script>
-        function layout() {
-            return {
-                dark: localStorage.getItem('theme') === 'dark',
-                openSidebar: false,
-                time: new Date(),
-                init() {
-                    this.applyTheme();
-                },
-                applyTheme() {
-                    document.documentElement.classList.toggle('dark', this.dark);
-                },
-                toggleDark() {
-                    this.dark = !this.dark;
-                    localStorage.setItem('theme', this.dark ? 'dark' : 'light');
-                    this.applyTheme();
-                },
-                now() {
-                    this.time = new Date();
-                    setTimeout(() => this.now(), 60000)
-                },
-            }
-        }
-        window.layout = layout;
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         (function() {

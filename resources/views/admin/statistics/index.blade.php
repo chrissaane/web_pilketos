@@ -163,7 +163,7 @@
                     </p>
                 </div>
                 <div class="stats-metric rounded-2xl bg-emerald-50 p-5 dark:bg-emerald-950/30">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emgit commit -m "Remove debug scripts blocking CI"erald-400">
                         Pemilih</p>
                     <p data-stat-voters class="mt-3 text-4xl font-black text-slate-900 dark:text-white">{{ $voterCount }}
                     </p>
