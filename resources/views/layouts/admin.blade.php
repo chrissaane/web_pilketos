@@ -1,14 +1,16 @@
 <!doctype html>
 <html lang="id" x-data="{ theme: localStorage.getItem('theme') || 'light', openSidebar: false, time: new Date() }" x-init="document.documentElement.classList.toggle('dark', theme === 'dark');
 document.documentElement.classList.add('theme-ready');
-$watch('theme', value => { localStorage.setItem('theme', value);
-    document.documentElement.classList.toggle('dark', value === 'dark'); })">
+$watch('theme', value => {
+    localStorage.setItem('theme', value);
+    document.documentElement.classList.toggle('dark', value === 'dark');
+})">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'PILKETOS') }} - Admin</title>
+    <title>PILKETOS - Admin</title>
     @php($faviconPath = App\Models\SiteSetting::getValue('favicon_path', ''))
     @if ($faviconPath)
         <link rel="icon"
