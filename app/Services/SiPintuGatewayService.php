@@ -74,28 +74,32 @@ class SiPintuGatewayService
             return null;
         }
 
-        $response = Http::timeout($this->getTimeout())
-            ->asForm()
-            ->withHeaders(['Accept' => 'application/json'])
-            ->post($baseUrl.'/oauth/token', [
-                'grant_type' => 'authorization_code',
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'redirect_uri' => $redirectUri,
-                'code' => $code,
-            ]);
+        try {
+            $response = Http::timeout($this->getTimeout())
+                ->asForm()
+                ->withHeaders(['Accept' => 'application/json'])
+                ->post($baseUrl.'/oauth/token', [
+                    'grant_type' => 'authorization_code',
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'redirect_uri' => $redirectUri,
+                    'code' => $code,
+                ]);
 
-        if (! $response->successful()) {
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $data = $response->json();
+
+            if (! is_array($data) || empty($data['access_token'])) {
+                return null;
+            }
+
+            return $data;
+        } catch (\Throwable) {
             return null;
         }
-
-        $data = $response->json();
-
-        if (! is_array($data) || empty($data['access_token'])) {
-            return null;
-        }
-
-        return $data;
     }
 
     public function fetchUserProfile(string $accessToken): ?array
@@ -106,24 +110,35 @@ class SiPintuGatewayService
             return null;
         }
 
-        $response = Http::timeout($this->getTimeout())
-            ->withToken($accessToken)
-            ->withHeaders(['Accept' => 'application/json'])
-            ->get($baseUrl.'/api/v1/user/profile');
-
-        $data = $response->successful() ? $response->json() : null;
-
-        if (empty($data) || (! isset($data['data']) && ! isset($data['user']))) {
-            $fallbackResponse = Http::timeout($this->getTimeout())
+        $data = null;
+        try {
+            $response = Http::timeout($this->getTimeout())
                 ->withToken($accessToken)
                 ->withHeaders(['Accept' => 'application/json'])
-                ->get($baseUrl.'/api/v1/user');
+                ->get($baseUrl.'/api/v1/user/profile');
 
-            if ($fallbackResponse->successful()) {
-                $fallbackData = $fallbackResponse->json();
-                if (! empty($fallbackData)) {
-                    $data = $fallbackData;
+            if ($response->successful()) {
+                $data = $response->json();
+            }
+        } catch (\Throwable) {
+            $data = null;
+        }
+
+        if (empty($data) || (! isset($data['data']) && ! isset($data['user']))) {
+            try {
+                $fallbackResponse = Http::timeout($this->getTimeout())
+                    ->withToken($accessToken)
+                    ->withHeaders(['Accept' => 'application/json'])
+                    ->get($baseUrl.'/api/v1/user');
+
+                if ($fallbackResponse->successful()) {
+                    $fallbackData = $fallbackResponse->json();
+                    if (! empty($fallbackData)) {
+                        $data = $fallbackData;
+                    }
                 }
+            } catch (\Throwable) {
+                // Fallback request failed
             }
         }
 

@@ -40,11 +40,16 @@ class SiPintuOauthController extends Controller
 
         $storedState = $request->session()->get('sipintu_oauth_state');
 
-        if (! $storedState || ! hash_equals($storedState, (string) $state)) {
+        // Validasi state jika keduanya (session lokal & callback dari server) ada isinya.
+        // Jika user masuk langsung dari portal SiPintu (IdP-Initiated SSO), parameter state memang tidak dikirimkan.
+        if ($storedState && $state && ! hash_equals((string) $storedState, (string) $state)) {
             return redirect()->route('login')->withErrors([
                 'identity' => 'State OAuth SiPintu tidak valid.',
             ]);
         }
+
+        // Hapus state dari session setelah divalidasi
+        $request->session()->forget('sipintu_oauth_state');
 
         $tokenData = $this->sipintuGateway->exchangeCodeForToken($code);
 
@@ -76,8 +81,14 @@ class SiPintuOauthController extends Controller
             ]);
         }
 
+        if (! $user->is_active) {
+            return redirect()->route('login')->withErrors([
+                'identity' => 'Akun Anda saat ini dinonaktifkan. Silakan hubungi administrator.',
+            ]);
+        }
+
         Auth::login($user, true);
-        $request->session()->forget('sipintu_oauth_state');
+        $request->session()->regenerate();
 
         return match ($user->role) {
             'admin' => redirect()->route('admin.dashboard'),

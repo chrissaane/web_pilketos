@@ -96,6 +96,59 @@
             font-size: 13px;
         }
 
+        .login-editorial .login-sipintu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            border: 1px solid rgba(16, 185, 129, .4);
+            border-radius: 0;
+            background: #f0fdf4;
+            padding: 13px 15px;
+            color: #065f46;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all .2s ease;
+        }
+
+        .login-editorial .login-sipintu-btn:hover {
+            border-color: #059669;
+            background: #dcfce7;
+            color: #064e3b;
+        }
+
+        .login-editorial .login-divider {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0 16px;
+        }
+
+        .login-editorial .login-divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(25, 34, 70, .14);
+        }
+
+        .login-editorial .login-divider-text {
+            position: relative;
+            background: #ffffff;
+            padding: 0 14px;
+            color: #8892b0;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
         html.dark .login-editorial {
             background: #101116;
             color: #f3f5ff;
@@ -149,6 +202,27 @@
             border-color: rgba(52, 211, 153, .25);
             background: rgba(16, 185, 129, .08);
             color: #6ee7b7;
+        }
+
+        html.dark .login-editorial .login-sipintu-btn {
+            border-color: rgba(52, 211, 153, .35);
+            background: rgba(6, 78, 59, .25);
+            color: #6ee7b7;
+        }
+
+        html.dark .login-editorial .login-sipintu-btn:hover {
+            border-color: #34d399;
+            background: rgba(6, 78, 59, .45);
+            color: #a7f3d0;
+        }
+
+        html.dark .login-editorial .login-divider::before {
+            background: rgba(255, 255, 255, .12);
+        }
+
+        html.dark .login-editorial .login-divider-text {
+            background: #111217;
+            color: #717c99;
         }
 
         @media (max-width: 640px) {
@@ -234,6 +308,20 @@
                     Login
                 </button>
             </form>
+
+            <!-- SiPintu SSO Login Option -->
+            <div class="login-divider">
+                <span class="login-divider-text">Atau Masuk Melalui</span>
+            </div>
+
+            <a href="{{ route('sipintu.oauth.redirect') }}" class="login-sipintu-btn group">
+                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <span>Masuk dengan Akun SiPintu (SSO)</span>
+            </a>
 
         </div>
     </div>

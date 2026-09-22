@@ -280,6 +280,56 @@ test('sipintu oauth callback can authenticate user', function () {
     $this->assertAuthenticated();
 });
 
+test('sipintu oauth callback succeeds for idp-initiated login without state parameter', function () {
+    Http::fake([
+        'http://localhost:8000/oauth/token' => Http::response([
+            'access_token' => 'token_idp_123',
+            'refresh_token' => 'refresh_123',
+            'token_type' => 'Bearer',
+        ], 200),
+        'http://localhost:8000/api/v1/user' => Http::response([
+            'success' => true,
+            'user' => [
+                'identity_number' => '20261102',
+                'name' => 'Siti IdP SSO',
+                'email' => 'siti@sipintu.test',
+                'role' => 'siswa',
+                'class_group' => 'XI',
+                'major' => 'PPLG',
+                'birth_date' => '2008-03-15',
+                'is_active' => true,
+            ],
+        ], 200),
+    ]);
+
+    config()->set('services.sipintu.api_url', 'http://localhost:8000');
+    config()->set('services.sipintu.base_url', 'http://localhost:8000');
+    config()->set('services.sipintu.client_id', 'app_oauth_test');
+    config()->set('services.sipintu.client_secret', 'sec_oauth_test');
+    config()->set('services.sipintu.redirect_uri', 'http://localhost:8001/oauth/callback');
+
+    // Callback directly from SiPintu without state parameter
+    $response = $this->withSession([
+        'sipintu_oauth_state' => 'old_lingering_state',
+    ])->get('/oauth/callback?code=auth-code-456');
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('users', [
+        'identity_number' => '20261102',
+        'email' => 'siti@sipintu.test',
+    ]);
+    $this->assertAuthenticated();
+});
+
+test('sipintu oauth callback rejects invalid state when both are present', function () {
+    $response = $this->withSession([
+        'sipintu_oauth_state' => 'expected_state',
+    ])->get('/oauth/callback?code=auth-code-123&state=wrong_state');
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHasErrors(['identity' => 'State OAuth SiPintu tidak valid.']);
+});
+
 test('full sipintu user sync reads all users from generic api list', function () {
     Http::fake([
         'http://localhost:8000/api/v1/users*' => Http::response([
