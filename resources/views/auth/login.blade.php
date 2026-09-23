@@ -308,21 +308,6 @@
                     Login
                 </button>
             </form>
-
-            <!-- SiPintu SSO Login Option -->
-            <div class="login-divider">
-                <span class="login-divider-text">Atau Masuk Melalui</span>
-            </div>
-
-            <a href="{{ route('sipintu.oauth.redirect') }}" class="login-sipintu-btn group">
-                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                    <polyline points="10 17 15 12 10 7"></polyline>
-                    <line x1="15" y1="12" x2="3" y2="12"></line>
-                </svg>
-                <span>Masuk dengan Akun SiPintu (SSO)</span>
-            </a>
-
         </div>
     </div>
 @endsection
