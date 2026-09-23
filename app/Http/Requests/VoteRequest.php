@@ -8,7 +8,7 @@ class VoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return auth()->check() && auth()->user()->role !== 'alumni' && (bool) auth()->user()->is_active;
     }
 
     public function rules(): array

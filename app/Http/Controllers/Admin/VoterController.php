@@ -82,6 +82,7 @@ class VoterController extends Controller
             'semua' => 'Semua',
             'guru' => 'Guru',
             'karyawan' => 'Karyawan',
+            'alumni' => 'Alumni (Lulus)',
         ];
 
         $classFilters = User::query()
@@ -126,27 +127,35 @@ class VoterController extends Controller
             ->latest('start_time')
             ->first();
 
-        $voters = User::query()
-            ->eligibleVoters()
-            ->when($selectedFilter === 'guru', fn ($q) => $q->where('role', 'guru'))
-            ->when($selectedFilter === 'karyawan', fn ($q) => $q->where('role', 'karyawan'))
-            ->when($selectedFilter === 'semua', fn ($q) => $q->where(function ($roleQuery) {
-                $roleQuery->whereIn('role', ['guru', 'karyawan'])
-                    ->orWhere(function ($studentQuery) {
-                        $studentQuery->where('role', 'siswa')->where('is_active', true);
-                    });
-            }))
-            ->when($selectedClassFilter, function ($q) use ($selectedClassFilter) {
-                $q->where('role', 'siswa')
-                    ->where('class_group', $selectedClassFilter['class_group'])
-                    ->when($selectedClassFilter['major'] === '', fn ($query) => $query->where(function ($majorQuery) {
-                        $majorQuery->whereNull('major')->orWhere('major', '');
-                    }), fn ($query) => $query->where('major', $selectedClassFilter['major']));
-            })
-            ->orderByRaw("CASE WHEN role IN ('guru', 'karyawan') THEN 1 ELSE 0 END")
-            ->orderBy('class_group')
-            ->orderBy('name')
-            ->get();
+        if ($selectedFilter === 'alumni') {
+            $voters = User::query()
+                ->where('role', 'alumni')
+                ->orderBy('class_group')
+                ->orderBy('name')
+                ->get();
+        } else {
+            $voters = User::query()
+                ->eligibleVoters()
+                ->when($selectedFilter === 'guru', fn ($q) => $q->where('role', 'guru'))
+                ->when($selectedFilter === 'karyawan', fn ($q) => $q->where('role', 'karyawan'))
+                ->when($selectedFilter === 'semua', fn ($q) => $q->where(function ($roleQuery) {
+                    $roleQuery->whereIn('role', ['guru', 'karyawan'])
+                        ->orWhere(function ($studentQuery) {
+                            $studentQuery->where('role', 'siswa')->where('is_active', true);
+                        });
+                }))
+                ->when($selectedClassFilter, function ($q) use ($selectedClassFilter) {
+                    $q->where('role', 'siswa')
+                        ->where('class_group', $selectedClassFilter['class_group'])
+                        ->when($selectedClassFilter['major'] === '', fn ($query) => $query->where(function ($majorQuery) {
+                            $majorQuery->whereNull('major')->orWhere('major', '');
+                        }), fn ($query) => $query->where('major', $selectedClassFilter['major']));
+                })
+                ->orderByRaw("CASE WHEN role IN ('guru', 'karyawan') THEN 1 ELSE 0 END")
+                ->orderBy('class_group')
+                ->orderBy('name')
+                ->get();
+        }
 
         $voters = $voters->sort(function ($firstVoter, $secondVoter) {
             $firstIdentity = trim((string) ($firstVoter->identity_number ?? ''));
@@ -182,14 +191,16 @@ class VoterController extends Controller
                 'name' => $voter->name,
                 'group' => in_array($voter->role, ['guru', 'karyawan'], true)
                     ? ucfirst($voter->role)
-                    : $this->formatClassDisplay($voter->class_group, $voter->major),
+                    : ($voter->role === 'alumni' ? 'Alumni' : $this->formatClassDisplay($voter->class_group, $voter->major)),
                 'credential' => $voter->identity_number ?: 'N/A',
                 'email' => $voter->email ?: 'N/A',
                 'major' => $voter->major ?: 'N/A',
                 'phone' => $voter->phone ?: 'N/A',
-                'status' => in_array($voter->id, $votedUserIds, true) ? 'Sudah Memilih' : 'Belum Memilih',
+                'status' => $voter->role === 'alumni'
+                    ? 'Alumni (Tidak Berhak)'
+                    : (in_array($voter->id, $votedUserIds, true) ? 'Sudah Memilih' : 'Belum Memilih'),
                 'password' => $password ?: 'N/A',
-                'token' => $token ?? 'N/A',
+                'token' => $voter->role === 'alumni' ? '-' : ($token ?? 'N/A'),
                 'user_id' => $voter->id,
             ];
         })->toArray();
@@ -482,9 +493,20 @@ class VoterController extends Controller
 
         DB::beginTransaction();
         try {
-            $promoted10 = User::where('role', 'siswa')->where('is_active', true)->where('class_group', '10')->update(['class_group' => '11']);
-            $promoted11 = User::where('role', 'siswa')->where('is_active', true)->where('class_group', '11')->update(['class_group' => '12']);
-            $graduated = User::where('role', 'siswa')->where('is_active', true)->where('class_group', '12')->update(['is_active' => false]);
+            $graduated = User::where('role', 'siswa')
+                ->where('is_active', true)
+                ->whereIn('class_group', ['12', 'XII'])
+                ->update(['role' => 'alumni', 'is_active' => false]);
+
+            $promoted11 = User::where('role', 'siswa')
+                ->where('is_active', true)
+                ->whereIn('class_group', ['11', 'XI'])
+                ->update(['class_group' => '12']);
+
+            $promoted10 = User::where('role', 'siswa')
+                ->where('is_active', true)
+                ->whereIn('class_group', ['10', 'X'])
+                ->update(['class_group' => '11']);
 
             DB::commit();
 
@@ -500,7 +522,10 @@ class VoterController extends Controller
     {
         DB::beginTransaction();
         try {
-            $archived = User::where('role', 'siswa')->where('class_group', '12')->where('is_active', true)->update(['is_active' => false]);
+            $archived = User::where('role', 'siswa')
+                ->whereIn('class_group', ['12', 'XII'])
+                ->where('is_active', true)
+                ->update(['role' => 'alumni', 'is_active' => false]);
             DB::commit();
 
             return redirect()->route('admin.voters.index')->with('success', sprintf('Arsip Kelas XII selesai. %d siswa dipindahkan ke Alumni (nonaktif).', $archived));

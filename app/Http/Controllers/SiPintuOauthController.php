@@ -95,6 +95,7 @@ class SiPintuOauthController extends Controller
             'guru' => redirect()->route('guru.dashboard'),
             'karyawan' => redirect()->route('guru.dashboard'),
             'siswa' => redirect()->route('siswa.dashboard'),
+            'alumni' => redirect()->route('home')->with('error', 'Akun alumni tidak memiliki akses ke bilik pemilihan.'),
             default => redirect()->route('home'),
         };
     }
@@ -133,6 +134,7 @@ class SiPintuOauthController extends Controller
         if (array_key_exists('graduated', $userData) || array_key_exists('is_graduated', $userData)) {
             $isGraduated = filter_var($userData['graduated'] ?? $userData['is_graduated'], FILTER_VALIDATE_BOOLEAN);
             $userData['is_active'] = ! $isGraduated;
+            $userData['role'] = $isGraduated ? 'alumni' : 'siswa';
         }
 
         $user = $this->sipintuGateway->syncUserFromGateway(['user' => $userData]);

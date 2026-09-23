@@ -357,6 +357,7 @@ class SiPintuGatewayService
                 'success' => false,
                 'students' => 0,
                 'teachers' => 0,
+                'alumni' => 0,
                 'total' => 0,
                 'message' => 'Konfigurasi SiPintu belum lengkap: parameter '.implode(', ', $missing).' belum diatur pada environment (.env).',
             ];
@@ -373,6 +374,7 @@ class SiPintuGatewayService
                     'success' => false,
                     'students' => 0,
                     'teachers' => 0,
+                    'alumni' => 0,
                     'total' => 0,
                     'message' => 'Sinkronisasi SiPintu gagal: '.$cause,
                 ];
@@ -434,6 +436,7 @@ class SiPintuGatewayService
 
             $studentCount = 0;
             $teacherCount = 0;
+            $alumniCount = 0;
             $newCount = 0;
             $updatedCount = 0;
             $failedCount = 0;
@@ -448,6 +451,7 @@ class SiPintuGatewayService
                     $chunk,
                     &$studentCount,
                     &$teacherCount,
+                    &$alumniCount,
                     &$newCount,
                     &$updatedCount,
                     &$failedCount,
@@ -495,6 +499,8 @@ class SiPintuGatewayService
 
                             if (in_array($syncedUser->role, ['guru', 'karyawan'], true)) {
                                 $teacherCount++;
+                            } elseif ($syncedUser->role === 'alumni') {
+                                $alumniCount++;
                             } else {
                                 $studentCount++;
                             }
@@ -505,12 +511,13 @@ class SiPintuGatewayService
                 });
             }
 
-            $total = $studentCount + $teacherCount;
+            $total = $studentCount + $teacherCount + $alumniCount;
 
             return [
                 'success' => true,
                 'students' => $studentCount,
                 'teachers' => $teacherCount,
+                'alumni' => $alumniCount,
                 'total' => $total,
                 'new_count' => $newCount,
                 'updated_count' => $updatedCount,
@@ -551,12 +558,14 @@ class SiPintuGatewayService
                     continue;
                 }
 
-                // Filter siswa: jika graduated == true atau classroom == null atau kosong, JANGAN diambil!
-                if ($this->isGraduated($item) || ! $this->hasValidClassroom($item)) {
+                // Filter siswa: jika graduated == true maka role alumni.
+                // Jika tidak graduated tapi classroom == null atau kosong, JANGAN diambil!
+                $isGrad = $this->isGraduated($item);
+                if (! $isGrad && ! $this->hasValidClassroom($item)) {
                     continue;
                 }
 
-                $item['role'] = 'siswa';
+                $item['role'] = $isGrad ? 'alumni' : 'siswa';
                 $identityNumber = $this->extractIdentityNumber($item);
                 if (blank($identityNumber)) {
                     continue;
@@ -622,9 +631,12 @@ class SiPintuGatewayService
                         }
 
                         $role = $this->normalizeRole($item['role'] ?? $item['user_type'] ?? $item['type'] ?? null, $identityNumber);
-                        // Filter: jika siswa dan sudah lulus / classroom tidak valid, jangan diambil!
-                        if ($role === 'siswa' && ($this->isGraduated($item) || ! $this->hasValidClassroom($item))) {
-                            continue;
+                        $isGrad = $this->isGraduated($item);
+                        if ($role === 'siswa' || $role === 'alumni' || $isGrad) {
+                            if (! $isGrad && ! $this->hasValidClassroom($item)) {
+                                continue;
+                            }
+                            $role = $isGrad ? 'alumni' : 'siswa';
                         }
 
                         $item['role'] = $role;
@@ -886,10 +898,18 @@ class SiPintuGatewayService
         $birthDate = $this->firstNonEmptyValue($userData, ['birth_date', 'tanggal_lahir', 'date_of_birth', 'dob', 'tgl_lahir']);
         $phone = $this->firstNonEmptyValue($userData, ['phone', 'phone_number', 'telephone', 'no_hp', 'nomor_hp', 'hp', 'wa', 'no_wa', 'telepon', 'mobile', 'nomor_telepon', 'telp', 'handphone']);
         $isGraduated = $this->isGraduated($userData);
+        if ($role === 'siswa' || $role === 'alumni' || $isGraduated) {
+            if ($isGraduated) {
+                $role = 'alumni';
+                $isActive = false;
+            } else {
+                $role = 'siswa';
+            }
+        }
         $isClassEmpty = blank($classGroup) && blank($rawClassValue);
-        $defaultActive = ! ($role === 'siswa' && ($isClassEmpty || $isGraduated));
+        $defaultActive = ! ($role === 'alumni' || ($role === 'siswa' && $isClassEmpty));
         $isActive = (bool) $this->firstNonEmptyValue($userData, ['is_active', 'active', 'status_aktif', 'is_active_user', 'status_user'], $defaultActive);
-        if ($role === 'siswa' && ($isClassEmpty || $isGraduated)) {
+        if ($role === 'alumni' || ($role === 'siswa' && $isClassEmpty)) {
             $isActive = false;
         }
 
@@ -960,10 +980,11 @@ class SiPintuGatewayService
                 in_array($value, ['admin', 'administrator', 'superadmin', 'owner'], true) => 'admin',
                 in_array($value, ['pegawai', 'staff', 'karyawan'], true) => 'karyawan',
                 in_array($value, ['guru', 'teacher', 'dosen', 'teacher_staff'], true) => 'guru',
-                in_array($value, ['student', 'siswa', 'murid', 'pelajar', 'alumni', 'alumni_siswa'], true) => 'siswa',
+                in_array($value, ['alumni', 'alumni_siswa'], true) => 'alumni',
+                in_array($value, ['student', 'siswa', 'murid', 'pelajar'], true) => 'siswa',
                 str_contains($value, 'guru') => 'guru',
                 str_contains($value, 'admin') => 'admin',
-                str_contains($value, 'alumni') => 'siswa',
+                str_contains($value, 'alumni') => 'alumni',
                 default => 'siswa',
             };
         }

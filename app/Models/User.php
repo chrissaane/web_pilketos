@@ -44,6 +44,7 @@ class User extends Authenticatable
     {
         return $query
             ->where('is_active', true)
+            ->where('role', '!=', 'alumni')
             ->where(function (Builder $query) {
                 $query->whereIn('role', ['guru', 'karyawan'])
                     ->orWhere(function (Builder $studentQuery) {

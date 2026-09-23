@@ -114,6 +114,7 @@ class AuthController extends Controller
             'guru' => route('guru.dashboard'),
             'karyawan' => route('guru.dashboard'),
             'siswa' => route('siswa.dashboard'),
+            'alumni' => route('home'),
             default => route('home'),
         };
     }

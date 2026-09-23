@@ -28,6 +28,10 @@ class DashboardController extends Controller
             return redirect()->route('guru.dashboard');
         }
 
+        if ($user->role === 'alumni') {
+            return redirect()->route('home')->with('error', 'Akun alumni tidak memiliki akses ke pemilihan.');
+        }
+
         return redirect()->route('siswa.dashboard');
     }
 
@@ -217,7 +221,11 @@ class DashboardController extends Controller
             return 'guru';
         }
 
-        if (in_array($normalizedRole, ['siswa', 'student', 'murid', 'pelajar', 'alumni', 'alumni_siswa'], true)) {
+        if (in_array($normalizedRole, ['alumni', 'alumni_siswa'], true)) {
+            return 'alumni';
+        }
+
+        if (in_array($normalizedRole, ['siswa', 'student', 'murid', 'pelajar'], true)) {
             return 'siswa';
         }
 
@@ -313,6 +321,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $expectsJson = $request->expectsJson();
+
+        if ($user->role === 'alumni' || ! $user->is_active) {
+            $msg = 'Akun alumni tidak memiliki hak suara dalam pemilihan.';
+            if ($expectsJson) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+
+            return back()->with('error', $msg);
+        }
 
         if (SiteSetting::getValue('election_active', '1') !== '1') {
             if ($expectsJson) {

@@ -381,7 +381,8 @@ test('sipintu sync button redirects gracefully when api times out', function () 
     config()->set('services.sipintu.client_id', 'app_timeout');
     config()->set('services.sipintu.client_secret', 'sec_timeout');
 
-    $response = $this->from(route('sipintu.data'))->post(route('sipintu.sync'));
+    $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+    $response = $this->actingAs($admin)->from(route('sipintu.data'))->post(route('sipintu.sync'));
 
     $response->assertRedirect(route('sipintu.data'));
     expect(session('error'))->not->toBeNull();
