@@ -11,11 +11,45 @@ use Illuminate\Support\Str;
 
 class SiPintuGatewayService
 {
+    public function getApiUrl(): string
+    {
+        $url = (string) (config('services.sipintu.api_url') ?: config('services.sipintu.base_url', 'https://sipintu.smkn1bangsri.sch.id'));
+
+        return rtrim($url, '/');
+    }
+
+    public function getBaseUrl(): string
+    {
+        $url = (string) (config('services.sipintu.base_url') ?: config('services.sipintu.api_url', 'https://sipintu.smkn1bangsri.sch.id'));
+
+        return rtrim($url, '/');
+    }
+
+    public function getClientId(): ?string
+    {
+        return config('services.sipintu.client_id');
+    }
+
+    public function getClientSecret(): ?string
+    {
+        return config('services.sipintu.client_secret');
+    }
+
+    public function getRedirectUri(): ?string
+    {
+        return config('services.sipintu.redirect_uri');
+    }
+
+    public function getTimeout(): int
+    {
+        return (int) config('services.sipintu.timeout', 30);
+    }
+
     public function buildAuthorizationUrl(string $state): ?string
     {
-        $baseUrl = rtrim(config('services.sipintu.base_url', env('SIPINTU_BASE_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $redirectUri = config('services.sipintu.redirect_uri', env('SIPINTU_REDIRECT_URI', 'http://localhost:8001/oauth/callback'));
+        $baseUrl = $this->getBaseUrl();
+        $clientId = $this->getClientId();
+        $redirectUri = $this->getRedirectUri();
 
         if (empty($baseUrl) || empty($clientId) || empty($redirectUri)) {
             return null;
@@ -31,16 +65,17 @@ class SiPintuGatewayService
 
     public function exchangeCodeForToken(string $code): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.base_url', env('SIPINTU_BASE_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
-        $redirectUri = config('services.sipintu.redirect_uri', env('SIPINTU_REDIRECT_URI', 'http://localhost:8001/oauth/callback'));
+        $baseUrl = $this->getBaseUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
+        $redirectUri = $this->getRedirectUri();
 
         if (empty($baseUrl) || empty($clientId) || empty($clientSecret) || empty($redirectUri)) {
             return null;
         }
 
-        $response = Http::asForm()
+        $response = Http::timeout($this->getTimeout())
+            ->asForm()
             ->withHeaders(['Accept' => 'application/json'])
             ->post($baseUrl.'/oauth/token', [
                 'grant_type' => 'authorization_code',
@@ -65,20 +100,22 @@ class SiPintuGatewayService
 
     public function fetchUserProfile(string $accessToken): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
+        $baseUrl = $this->getApiUrl();
 
         if (empty($baseUrl)) {
             return null;
         }
 
-        $response = Http::withToken($accessToken)
+        $response = Http::timeout($this->getTimeout())
+            ->withToken($accessToken)
             ->withHeaders(['Accept' => 'application/json'])
             ->get($baseUrl.'/api/v1/user/profile');
 
         $data = $response->successful() ? $response->json() : null;
 
         if (empty($data) || (! isset($data['data']) && ! isset($data['user']))) {
-            $fallbackResponse = Http::withToken($accessToken)
+            $fallbackResponse = Http::timeout($this->getTimeout())
+                ->withToken($accessToken)
                 ->withHeaders(['Accept' => 'application/json'])
                 ->get($baseUrl.'/api/v1/user');
 
@@ -117,9 +154,9 @@ class SiPintuGatewayService
 
     public function authenticate(string $identity, string $password): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
             return null;
@@ -142,7 +179,7 @@ class SiPintuGatewayService
 
         foreach ($endpoints as $endpoint) {
             try {
-                $response = Http::timeout(5)->asForm()
+                $response = Http::timeout(min(10, $this->getTimeout()))->asForm()
                     ->withHeaders(['Accept' => 'application/json'])
                     ->post($baseUrl.$endpoint, $payload);
 
@@ -171,15 +208,15 @@ class SiPintuGatewayService
 
     public function ping(): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         if (empty($baseUrl) || empty($clientId)) {
             return null;
         }
 
-        $response = Http::withHeaders([
+        $response = Http::timeout($this->getTimeout())->withHeaders([
             'Accept' => 'application/json',
             'X-Client-ID' => $clientId,
             'X-Client-Secret' => $clientSecret,
@@ -196,15 +233,15 @@ class SiPintuGatewayService
 
     public function validateClient(): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
             return null;
         }
 
-        $response = Http::withHeaders([
+        $response = Http::timeout($this->getTimeout())->withHeaders([
             'Accept' => 'application/json',
             'X-Client-ID' => $clientId,
             'X-Client-Secret' => $clientSecret,
@@ -222,9 +259,9 @@ class SiPintuGatewayService
 
     public function getStudents(?string $nis = null, ?string $search = null, ?int $page = null, ?int $perPage = null): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
             return null;
@@ -252,9 +289,9 @@ class SiPintuGatewayService
 
     public function getTeachers(?string $nip = null, ?string $search = null, ?int $page = null, ?int $perPage = null): ?array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         if (empty($baseUrl) || empty($clientId) || empty($clientSecret)) {
             return null;
@@ -285,9 +322,9 @@ class SiPintuGatewayService
         @set_time_limit(300);
         @ini_set('memory_limit', '512M');
 
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         $missing = [];
         if (empty($baseUrl)) {
@@ -478,15 +515,15 @@ class SiPintuGatewayService
 
     protected function fetchAllUsersFromGateway(?string &$errorReason = null): array
     {
-        $baseUrl = rtrim(config('services.sipintu.api_url', env('SIPINTU_API_URL', 'http://localhost:8000')), '/');
-        $clientId = config('services.sipintu.client_id', env('SIPINTU_CLIENT_ID'));
-        $clientSecret = config('services.sipintu.client_secret', env('SIPINTU_CLIENT_SECRET'));
+        $baseUrl = $this->getApiUrl();
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         $mergedUsers = [];
         $seenKeys = [];
         $errors = [];
 
-        // 1. Fetch Students (HANYA siswa yang classroom-nya memiliki isi dan BUKAN null)
+        // 1. Fetch Students (HANYA siswa yang belum lulus / graduated = false DAN classroom-nya memiliki isi dan BUKAN null)
         $studentsErr = null;
         $studentsData = $this->fetchEndpointUsers($baseUrl, $clientId, $clientSecret, '/api/v1/sijuna/students', $studentsErr);
         if ($studentsErr) {
@@ -499,8 +536,8 @@ class SiPintuGatewayService
                     continue;
                 }
 
-                // Filter siswa: jika classroom == null atau kosong, JANGAN diambil!
-                if (! $this->hasValidClassroom($item)) {
+                // Filter siswa: jika graduated == true atau classroom == null atau kosong, JANGAN diambil!
+                if ($this->isGraduated($item) || ! $this->hasValidClassroom($item)) {
                     continue;
                 }
 
@@ -570,8 +607,8 @@ class SiPintuGatewayService
                         }
 
                         $role = $this->normalizeRole($item['role'] ?? $item['user_type'] ?? $item['type'] ?? null, $identityNumber);
-                        // Filter: jika siswa dan classroom tidak valid, jangan diambil!
-                        if ($role === 'siswa' && ! $this->hasValidClassroom($item)) {
+                        // Filter: jika siswa dan sudah lulus / classroom tidak valid, jangan diambil!
+                        if ($role === 'siswa' && ($this->isGraduated($item) || ! $this->hasValidClassroom($item))) {
                             continue;
                         }
 
@@ -833,10 +870,11 @@ class SiPintuGatewayService
 
         $birthDate = $this->firstNonEmptyValue($userData, ['birth_date', 'tanggal_lahir', 'date_of_birth', 'dob', 'tgl_lahir']);
         $phone = $this->firstNonEmptyValue($userData, ['phone', 'phone_number', 'telephone', 'no_hp', 'nomor_hp', 'hp', 'wa', 'no_wa', 'telepon', 'mobile', 'nomor_telepon', 'telp', 'handphone']);
+        $isGraduated = $this->isGraduated($userData);
         $isClassEmpty = blank($classGroup) && blank($rawClassValue);
-        $defaultActive = ! ($role === 'siswa' && $isClassEmpty);
+        $defaultActive = ! ($role === 'siswa' && ($isClassEmpty || $isGraduated));
         $isActive = (bool) $this->firstNonEmptyValue($userData, ['is_active', 'active', 'status_aktif', 'is_active_user', 'status_user'], $defaultActive);
-        if ($role === 'siswa' && $isClassEmpty) {
+        if ($role === 'siswa' && ($isClassEmpty || $isGraduated)) {
             $isActive = false;
         }
 
@@ -1073,8 +1111,50 @@ class SiPintuGatewayService
         return $records;
     }
 
+    public function isGraduated(array $item): bool
+    {
+        // 1. Direct boolean / string flags in payload
+        foreach (['graduated', 'is_graduated', 'user.graduated', 'user.is_graduated'] as $key) {
+            $val = str_contains($key, '.') ? data_get($item, $key) : ($item[$key] ?? null);
+            if ($val !== null) {
+                if (is_bool($val)) {
+                    return $val;
+                }
+                if (is_string($val)) {
+                    $lower = strtolower(trim($val));
+                    if (in_array($lower, ['true', '1', 'yes', 'y', 'lulus', 'graduated', 'alumni'], true)) {
+                        return true;
+                    }
+                    if (in_array($lower, ['false', '0', 'no', 'n', 'belum_lulus', 'aktif', 'active'], true)) {
+                        return false;
+                    }
+                }
+                if (is_numeric($val)) {
+                    return (int) $val === 1;
+                }
+            }
+        }
+
+        // 2. Status / role string check
+        $status = strtolower((string) ($item['status'] ?? data_get($item, 'user.status') ?? ''));
+        if (in_array($status, ['graduated', 'lulus', 'alumni', 'alumni_siswa', 'nonaktif_lulus'], true)) {
+            return true;
+        }
+
+        $role = strtolower((string) ($item['role'] ?? $item['user_type'] ?? $item['type'] ?? ''));
+        if (in_array($role, ['alumni', 'alumni_siswa'], true)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function hasValidClassroom(array $item): bool
     {
+        if ($this->isGraduated($item)) {
+            return false;
+        }
+
         if (array_key_exists('classroom', $item)) {
             $classroom = $item['classroom'];
             if (is_array($classroom)) {

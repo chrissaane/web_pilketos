@@ -14,6 +14,13 @@ use App\Http\Controllers\SiPintuOauthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+    ]);
+});
+Route::post('/api/sipintu/sync-user', [SiPintuOauthController::class, 'syncUser']);
+
 Route::get('/tentang', fn () => view('public.about'))->name('about');
 Route::get('/panduan', fn () => view('public.guide'))->name('guide');
 Route::get('/pemilihan/{election}', [HomeController::class, 'showElection'])->name('election.show');

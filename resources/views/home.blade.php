@@ -84,14 +84,14 @@
             text-transform: uppercase;
         }
 
-        .hero-kicker:before {
+        /* .hero-kicker:before {
             content: '';
             width: 10px;
             height: 10px;
             border-radius: 50%;
             background: var(--cyan);
             box-shadow: 0 0 18px #1ee6e1;
-        }
+        } */
 
         .hero-title {
             position: relative;

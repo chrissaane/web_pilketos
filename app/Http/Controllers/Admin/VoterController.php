@@ -413,6 +413,7 @@ class VoterController extends Controller
         $filter = strtolower((string) $request->input('filter', 'semua'));
 
         $voters = User::query()
+            ->where('is_active', true)
             ->when($filter === 'guru', fn ($query) => $query->where('role', 'guru'))
             ->when($filter === 'karyawan', fn ($query) => $query->where('role', 'karyawan'))
             ->when($filter === 'siswa', fn ($query) => $query->where('role', 'siswa'))

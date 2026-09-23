@@ -87,4 +87,54 @@ class SiPintuOauthController extends Controller
             default => redirect()->route('home'),
         };
     }
+
+    public function syncUser(Request $request)
+    {
+        $clientId = (string) $request->header('X-Client-ID');
+        $clientSecret = (string) $request->header('X-Client-Secret');
+
+        if (! hash_equals((string) config('services.sipintu.client_id'), $clientId)
+            || ! hash_equals((string) config('services.sipintu.client_secret'), $clientSecret)) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $payload = $request->all();
+        $userData = $payload['user'] ?? $payload['data']['user'] ?? $payload['data'] ?? $payload;
+
+        if (! is_array($userData)) {
+            return response()->json(['message' => 'Payload user tidak valid.'], 422);
+        }
+
+        $identity = collect([
+            'identity_number',
+            'nis',
+            'nip',
+            'nisn',
+            'no_induk',
+            'nomor_induk',
+            'username',
+        ])->first(fn (string $key) => filled($userData[$key] ?? null));
+
+        if (! $identity) {
+            return response()->json(['message' => 'Identitas user wajib dikirim.'], 422);
+        }
+
+        if (array_key_exists('graduated', $userData) || array_key_exists('is_graduated', $userData)) {
+            $isGraduated = filter_var($userData['graduated'] ?? $userData['is_graduated'], FILTER_VALIDATE_BOOLEAN);
+            $userData['is_active'] = ! $isGraduated;
+        }
+
+        $user = $this->sipintuGateway->syncUserFromGateway(['user' => $userData]);
+
+        if (! $user) {
+            return response()->json(['message' => 'Data user SiPintu tidak dapat disinkronkan.'], 422);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'identity_number' => $user->identity_number,
+            'is_active' => (bool) $user->is_active,
+            'updated' => true,
+        ]);
+    }
 }

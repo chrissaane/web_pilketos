@@ -139,8 +139,8 @@ class HomeController extends Controller
 
     public function sipintuData()
     {
-        $students = User::query()->where('role', 'siswa')->orderBy('name')->get();
-        $teachers = User::query()->where('role', 'guru')->orderBy('name')->get();
+        $students = User::query()->where('role', 'siswa')->where('is_active', true)->orderBy('name')->get();
+        $teachers = User::query()->whereIn('role', ['guru', 'karyawan'])->where('is_active', true)->orderBy('name')->get();
 
         $serviceConfig = [
             'api_url' => config('services.sipintu.api_url', env('SIPINTU_API_URL')),

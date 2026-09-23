@@ -17,7 +17,8 @@
                         class="inline-block h-full">
                         @csrf
                         <input type="hidden" name="filter" value="{{ $selectedFilter }}">
-                        <button type="submit"
+                        <button type="submit" data-confirm-title="Sinkronisasi Data SiPintu"
+                            data-confirm="Apakah Anda yakin ingin menyinkronkan data pemilih dari SiPintu?"
                             class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500">
                             <i class="fa-solid fa-rotate"></i>
                             <span>Sinkronisasi SiPintu</span>
@@ -69,7 +70,8 @@
                     <form id="archiveForm" action="{{ route('admin.voters.archive_xii') }}" method="POST"
                         style="display:none">@csrf</form>
 
-                    <a href="{{ route('admin.import.index') }}"
+                    <a href="{{ route('admin.import.index') }}" data-confirm-title="Import Data Pemilih"
+                        data-confirm="Apakah Anda yakin ingin membuka halaman import data pemilih?"
                         class="inline-flex h-full min-h-[50px] w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 dark:bg-cyan-600 dark:hover:bg-cyan-500">
                         <i class="fa-solid fa-file-import"></i>
                         Import Excel
@@ -104,22 +106,27 @@
                             class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
                             <div class="py-1">
                                 <a href="{{ route('admin.voters.export', ['filter' => $selectedFilter]) }}"
+                                    data-confirm="Apakah Anda yakin ingin mengunduh data pemilih sesuai filter saat ini?"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Filter Saat Ini
                                 </a>
                                 <a href="{{ route('admin.voters.export', ['filter' => 'semua']) }}"
+                                    data-confirm="Apakah Anda yakin ingin mengunduh semua data pemilih?"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Semua
                                 </a>
                                 <a href="{{ route('admin.voters.export', ['filter' => 'siswa']) }}"
+                                    data-confirm="Apakah Anda yakin ingin mengunduh data siswa?"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Data Siswa
                                 </a>
                                 <a href="{{ route('admin.voters.export', ['filter' => 'guru']) }}"
+                                    data-confirm="Apakah Anda yakin ingin mengunduh data guru?"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Data Guru
                                 </a>
                                 <a href="{{ route('admin.voters.export', ['filter' => 'karyawan']) }}"
+                                    data-confirm="Apakah Anda yakin ingin mengunduh data karyawan?"
                                     class="block px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                                     Unduh Data Karyawan
                                 </a>
@@ -130,7 +137,8 @@
 
                 <!-- Filter Dropdown -->
                 <div class="grid w-full gap-3 lg:grid-cols-2 lg:items-end">
-                    <form id="voterFilterForm" method="GET" action="{{ route('admin.voters.index') }}" class="contents">
+                    <form id="voterFilterForm" method="GET" action="{{ route('admin.voters.index') }}"
+                        class="contents">
                         <div class="space-y-2">
                             <label for="filter"
                                 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tingkat</label>
@@ -376,6 +384,35 @@
                 applyVoterSearch();
             }
 
+            function confirmAction(message, title = 'Konfirmasi') {
+                if (!window.Swal) {
+                    return Promise.resolve(window.confirm(message));
+                }
+
+                return Swal.fire({
+                    title,
+                    text: message,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, lanjutkan',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#0f766e'
+                }).then((result) => result.isConfirmed);
+            }
+
+            document.querySelectorAll('a[data-confirm]').forEach((link) => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+
+                    confirmAction(link.dataset.confirm, link.dataset.confirmTitle || 'Konfirmasi')
+                        .then((confirmed) => {
+                            if (confirmed) {
+                                window.location.href = link.href;
+                            }
+                        });
+                });
+            });
+
             const syncForm = document.getElementById('sipintuSyncForm');
             if (!syncForm) return;
 
@@ -384,79 +421,87 @@
 
                 const button = syncForm.querySelector('button[type="submit"]');
                 const originalText = button.innerHTML;
-                button.disabled = true;
-                button.innerHTML =
-                    '<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyinkronkan...</span>';
+                confirmAction(syncForm.querySelector('[data-confirm]').dataset.confirm,
+                        syncForm.querySelector('[data-confirm]').dataset.confirmTitle)
+                    .then((confirmed) => {
+                        if (!confirmed) return;
 
-                const formData = new FormData(syncForm);
+                        button.disabled = true;
+                        button.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyinkronkan...</span>';
 
-                fetch(syncForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': formData.get('_token')
-                        },
-                        body: formData
-                    })
-                    .then(async (response) => {
-                        const data = await response.json().catch(() => ({}));
+                        const formData = new FormData(syncForm);
 
-                        if (!response.ok || data.success === false) {
-                            throw new Error((data && data.message) ||
-                                'Sinkronisasi gagal dilakukan.');
-                        }
+                        return fetch(syncForm.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': formData.get('_token')
+                                },
+                                body: formData
+                            })
+                            .then(async (response) => {
+                                const data = await response.json().catch(() => ({}));
 
-                        if (data && data.redirect) {
-                            const partialUrl = new URL(data.redirect, window.location.origin);
-                            partialUrl.searchParams.set('partial', '1');
+                                if (!response.ok || data.success === false) {
+                                    throw new Error((data && data.message) ||
+                                        'Sinkronisasi gagal dilakukan.');
+                                }
 
-                            fetch(partialUrl.toString(), {
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest'
-                                    }
-                                })
-                                .then((res) => res.text())
-                                .then((html) => {
-                                    const container = document.getElementById(
-                                        'votersTableBody');
-                                    if (container) {
-                                        container.innerHTML = html;
-                                    }
-                                })
-                                .catch(() => {
-                                    window.location.href = data.redirect;
-                                });
-                        }
+                                if (data && data.redirect) {
+                                    const partialUrl = new URL(data.redirect, window.location
+                                        .origin);
+                                    partialUrl.searchParams.set('partial', '1');
 
-                        if (window.Swal) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Sinkronisasi Selesai',
-                                text: data.message || 'Data SiPintu berhasil diperbarui.',
-                                timer: 2500,
-                                showConfirmButton: false
+                                    fetch(partialUrl.toString(), {
+                                            headers: {
+                                                'X-Requested-With': 'XMLHttpRequest'
+                                            }
+                                        })
+                                        .then((res) => res.text())
+                                        .then((html) => {
+                                            const container = document.getElementById(
+                                                'votersTableBody');
+                                            if (container) {
+                                                container.innerHTML = html;
+                                            }
+                                        })
+                                        .catch(() => {
+                                            window.location.href = data.redirect;
+                                        });
+                                }
+
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Sinkronisasi Selesai',
+                                        text: data.message ||
+                                            'Data SiPintu berhasil diperbarui.',
+                                        timer: 2500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    alert(data.message || 'Data SiPintu berhasil diperbarui.');
+                                }
+                            })
+                            .catch((error) => {
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Sinkronisasi Gagal',
+                                        text: error.message ||
+                                            'Terjadi kesalahan saat sinkronisasi data SiPintu.',
+                                        confirmButtonText: 'Tutup',
+                                        confirmButtonColor: '#e11d48'
+                                    });
+                                } else {
+                                    alert(error.message || 'Sinkronisasi gagal.');
+                                }
+                            })
+                            .finally(() => {
+                                button.disabled = false;
+                                button.innerHTML = originalText;
                             });
-                        } else {
-                            alert(data.message || 'Data SiPintu berhasil diperbarui.');
-                        }
-                    })
-                    .catch((error) => {
-                        if (window.Swal) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Sinkronisasi Gagal',
-                                text: error.message ||
-                                    'Terjadi kesalahan saat sinkronisasi data SiPintu.',
-                                confirmButtonText: 'Tutup',
-                                confirmButtonColor: '#e11d48'
-                            });
-                        } else {
-                            alert(error.message || 'Sinkronisasi gagal.');
-                        }
-                    })
-                    .finally(() => {
-                        button.disabled = false;
-                        button.innerHTML = originalText;
                     });
             });
         });

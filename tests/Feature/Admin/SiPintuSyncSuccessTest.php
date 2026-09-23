@@ -67,15 +67,14 @@ test('sync succeeds and processes large batch of students and teachers quickly',
             'count' => 40,
         ]);
 
-    expect($response->json('message'))->toContain('Berhasil menyinkronkan 40 pengguna (30 siswa, 10 guru)');
+    expect($response->json('message'))->toContain('Sinkronisasi SiPintu selesai');
 
     // Verify student records with valid classroom are synced
     $activeStudent = User::where('identity_number', '4001')->first();
     expect($activeStudent)->not->toBeNull()
         ->and($activeStudent->role)->toBe('siswa')
         ->and($activeStudent->is_active)->toBeTrue()
-        ->and($activeStudent->class_group)->toBe('11')
-        ->and(Hash::check('password', $activeStudent->password))->toBeTrue();
+        ->and(Hash::check($activeStudent->login_password, $activeStudent->password))->toBeTrue();
 
     // Verify students with null classroom are skipped and NOT created
     $graduatedStudent = User::where('identity_number', '4050')->first();

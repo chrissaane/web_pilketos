@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'active' => EnsureUserIsActive::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'api/sipintu/sync-user',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
