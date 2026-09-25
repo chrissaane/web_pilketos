@@ -21,6 +21,14 @@ class HomeController extends Controller
             ->orderBy('start_time', 'desc')
             ->get();
         $resultElection = $elections->first();
+        $heroElection = Election::with('candidates')
+            ->where('is_published', true)
+            ->latest('created_at')
+            ->first();
+        $heroCandidates = $heroElection?->candidates
+            ->sortBy('candidate_number')
+            ->take(3)
+            ->values() ?? collect();
         $showVoteCounts = $resultElection?->publicResultsVisible() ?? false;
         $resultsPublishAt = $resultElection?->results_publish_at;
         $resultCandidates = $resultElection?->candidates ?? collect();
@@ -49,6 +57,8 @@ class HomeController extends Controller
             'landingBanner',
             'settings',
             'resultElection',
+            'heroElection',
+            'heroCandidates',
             'resultCandidates',
             'resultTotalVotes',
             'resultVoterCount',

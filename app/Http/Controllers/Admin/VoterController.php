@@ -101,8 +101,40 @@ class VoterController extends Controller
                     'major' => trim((string) $student->major),
                 ];
             })
-            ->unique('key')
-            ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE);
+            ->concat([[
+                'key' => 'kelas_xii-mplb-3',
+                'label' => 'XII MPLB 3',
+                'class_group' => '12',
+                'major' => 'MPLB 3',
+            ]])
+            ->unique('label')
+            ->sortBy(function (array $classFilter) {
+                preg_match('/^(XII|XI|X)\s+(.+?)\s+(\d+)$/i', $classFilter['label'], $matches);
+
+                $levelOrder = [
+                    'X' => 1,
+                    'XI' => 2,
+                    'XII' => 3,
+                ];
+                $majorOrder = [
+                    'TO' => 1,
+                    'PPLG' => 2,
+                    'MPLB' => 3,
+                    'AKL' => 4,
+                    'PM' => 5,
+                ];
+                $level = Str::upper($matches[1] ?? '');
+                $major = Str::upper(trim($matches[2] ?? $classFilter['label']));
+                $majorKey = collect($majorOrder)
+                    ->first(fn (int $order, string $name) => Str::contains($major, $name));
+
+                return [
+                    $levelOrder[$level] ?? 99,
+                    $majorKey ?? 99,
+                    (int) ($matches[3] ?? 0),
+                    $classFilter['label'],
+                ];
+            });
 
         foreach ($classFilters as $classFilter) {
             $filters[$classFilter['key']] = $classFilter['label'];

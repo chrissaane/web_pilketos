@@ -849,6 +849,8 @@ $watch('theme', value => {
                         class="transition {{ request()->routeIs('home') ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400' }}">Beranda</a>
                     <a href="{{ route('home') }}#panduan" data-nav-section="panduan"
                         class="transition text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Panduan</a>
+                    <a href="{{ route('home') }}#pemilihan" data-nav-section="pemilihan"
+                        class="transition text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Pemilihan</a>
                     <a href="{{ route('home') }}#hasil" data-nav-section="hasil"
                         class="transition text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Hasil</a>
                     <a href="{{ route('home') }}#tentang" data-nav-section="tentang"
@@ -906,6 +908,8 @@ $watch('theme', value => {
                         class="rounded-2xl px-3 py-2 transition {{ request()->routeIs('home') ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800' }}">Beranda</a>
                     <a href="{{ route('home') }}#panduan" data-nav-section="panduan" x-on:click="mobileMenu = false"
                         class="rounded-2xl px-3 py-2 transition text-slate-600 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400">Panduan</a>
+                    <a href="{{ route('home') }}#pemilihan" data-nav-section="pemilihan" x-on:click="mobileMenu = false"
+                        class="rounded-2xl px-3 py-2 transition text-slate-600 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400">Pemilihan</a>
                     <a href="{{ route('home') }}#hasil" data-nav-section="hasil" x-on:click="mobileMenu = false"
                         class="rounded-2xl px-3 py-2 transition text-slate-600 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400">Hasil</a>
                     <a href="{{ route('home') }}#tentang" data-nav-section="tentang" x-on:click="mobileMenu = false"

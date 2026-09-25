@@ -155,15 +155,23 @@
                 </form>
             </div>
 
-            <div class="mt-8 grid gap-4 sm:grid-cols-3">
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="stats-metric rounded-2xl bg-blue-50 p-5 dark:bg-blue-950/30">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Total Suara
                     </p>
                     <p data-stat-total class="mt-3 text-4xl font-black text-slate-900 dark:text-white">{{ $totalVotes }}
                     </p>
                 </div>
+                <div class="stats-metric rounded-2xl bg-rose-50 p-5 dark:bg-rose-950/30">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-rose-600 dark:text-rose-400">Belum
+                        Memilih
+                    </p>
+                    <p data-stat-not-voted class="mt-3 text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $notVotedCount }}</p>
+                </div>
                 <div class="stats-metric rounded-2xl bg-emerald-50 p-5 dark:bg-emerald-950/30">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emgit commit -m "Remove debug scripts blocking CI"erald-400">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emgit commit -m "Remove
+                        debug scripts blocking CI"erald-400">
                         Pemilih</p>
                     <p data-stat-voters class="mt-3 text-4xl font-black text-slate-900 dark:text-white">{{ $voterCount }}
                     </p>
@@ -172,7 +180,7 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
                         Partisipasi</p>
                     <p data-stat-participation class="mt-3 text-4xl font-black text-slate-900 dark:text-white">
-                        {{ $participation }}%</p>
+                        {{ rtrim(rtrim(number_format($participation, 2, ',', '.'), '0'), ',') }}%</p>
                 </div>
             </div>
 
@@ -269,8 +277,10 @@
 
                     const data = await response.json();
                     document.querySelector('[data-stat-total]').textContent = data.total_votes;
+                    document.querySelector('[data-stat-not-voted]').textContent = data.not_voted_count;
                     document.querySelector('[data-stat-voters]').textContent = data.voter_count;
-                    document.querySelector('[data-stat-participation]').textContent = `${data.participation}%`;
+                    document.querySelector('[data-stat-participation]').textContent =
+                        `${Number(data.participation).toLocaleString('id-ID')}%`;
 
                     data.candidates.forEach((candidate) => {
                         const row = document.querySelector(`[data-stat-candidate="${candidate.id}"]`);

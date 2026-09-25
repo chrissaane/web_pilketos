@@ -247,19 +247,15 @@
                 </div>
                 @if ($election)
                     <img src="{{ $election->banner_url ?? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=500&q=80' }}"
-                        alt="Election" class="hidden h-40 w-40 rounded-3xl object-cover md:block" />
+                        alt="Election"
+                        class="hidden aspect-video w-64 rounded-3xl bg-slate-900 object-contain md:block" />
                 @endif
             </div>
 
-            <div class="mt-8 grid gap-3 sm:grid-cols-3">
+            <div class="mt-8 grid items-stretch gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                 <div class="rounded-3xl bg-slate-900/80 p-4">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Berakhir Dalam</p>
                     <div class="mt-3 text-xl font-bold text-white" x-text="remaining"></div>
-                </div>
-                <div class="rounded-3xl bg-slate-900/80 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Tingkat Partisipasi</p>
-                    <div class="mt-3 text-xl font-bold text-white">{{ $election ? ($participation ?? 0) . '%' : '-' }}
-                    </div>
                 </div>
                 <div
                     class="rounded-3xl bg-slate-100 p-4 ring-1 ring-slate-200 dark:bg-slate-900/80 dark:ring-slate-700">
@@ -268,18 +264,17 @@
                         class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:ring-emerald-500/30">
                         {{ $election ? $election->current_status : 'Belum Aktif' }}</div>
                 </div>
-            </div>
-
-            <div class="mt-6 flex flex-wrap gap-3">
-                @if ($election)
-                    <a href="{{ route('election.show', $election) }}"
-                        class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-400 transition">Pilih
-                        Sekarang <i class="fa-solid fa-arrow-right-long"></i></a>
-                @else
-                    <span
-                        class="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-5 py-3 text-sm font-semibold text-slate-200">Tidak
-                        tersedia</span>
-                @endif
+                <div class="flex items-center justify-start md:justify-end">
+                    @if ($election)
+                        <a href="{{ route('election.show', $election) }}"
+                            class="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400">Pilih
+                            Sekarang <i class="fa-solid fa-arrow-right-long"></i></a>
+                    @else
+                        <span
+                            class="inline-flex items-center rounded-full bg-slate-800/80 px-4 py-2.5 text-sm font-semibold text-slate-200">Tidak
+                            tersedia</span>
+                    @endif
+                </div>
             </div>
         </div>
 

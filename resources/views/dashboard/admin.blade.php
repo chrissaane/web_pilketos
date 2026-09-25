@@ -148,15 +148,15 @@
 
             <div
                 class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-950">
-                <h3 class="text-xl font-black text-slate-900 dark:text-slate-100">User Breakdown</h3>
+                <h3 class="text-xl font-black text-slate-900 dark:text-slate-100">Rincian Pengguna</h3>
                 <div class="mt-5 space-y-4 text-sm text-slate-600 dark:text-slate-400">
                     <div class="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
-                        <div class="text-sm text-slate-500 dark:text-slate-400">Siswa (Students)</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">Siswa</div>
                         <div class="mt-3 text-2xl font-black text-slate-900 dark:text-slate-100">{{ $siswaCount ?? 0 }}
                         </div>
                     </div>
                     <div class="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
-                        <div class="text-sm text-slate-500 dark:text-slate-400">Guru & Staff</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">Guru & Karyawan</div>
                         <div class="mt-3 text-2xl font-black text-slate-900 dark:text-slate-100">{{ $guruCount ?? 0 }}
                         </div>
                     </div>

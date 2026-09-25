@@ -175,8 +175,7 @@
                 <div class="mt-10 space-y-8">
                     @forelse($elections as $election)
                         @php
-                            $totalVotes = $election->votes_count;
-                            $maxCandidateVotes = $election->candidates->max('votes_count') ?? 0;
+                            $totalVotes = $election->candidates->sum('votes_count');
                             $electionShowVoteCounts = $election->publicResultsVisible();
                         @endphp
                         <section class="results-election">
@@ -225,6 +224,7 @@
 
                             <div class="mt-7 space-y-5">
                                 @forelse($election->candidates as $candidate)
+                                    @php($candidatePercent = $totalVotes > 0 ? round(($candidate->votes_count / $totalVotes) * 100) : 0)
                                     <div class="flex items-center gap-3">
                                         @if ($candidate->photo_url)
                                             <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}"
@@ -239,12 +239,12 @@
                                                 @if ($electionShowVoteCounts)
                                                     <span
                                                         class="results-muted whitespace-nowrap">{{ $candidate->votes_count }}
-                                                        suara</span>
+                                                        suara ({{ $candidatePercent }}%)</span>
                                                 @endif
                                             </div>
                                             <div class="results-track overflow-hidden">
                                                 <div class="results-value h-full {{ $electionShowVoteCounts ? '' : 'invisible' }}"
-                                                    style="width: {{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
+                                                    style="width: {{ $candidatePercent }}%">
                                                 </div>
                                             </div>
                                         </div>

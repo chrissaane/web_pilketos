@@ -85,20 +85,20 @@
         }
 
         /* .hero-kicker:before {
-            content: '';
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--cyan);
-            box-shadow: 0 0 18px #1ee6e1;
-        } */
+                        content: '';
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background: var(--cyan);
+                        box-shadow: 0 0 18px #1ee6e1;
+                    } */
 
         .hero-title {
             position: relative;
             z-index: 1;
             max-width: 730px;
             margin-top: 40px !important;
-            font-size: clamp(3.7rem, 8vw, 7.8rem);
+            font-size: clamp(2.8rem, 5.4vw, 5.4rem);
             font-weight: 400;
             letter-spacing: -.08em;
             line-height: .86;
@@ -115,8 +115,133 @@
             max-width: 550px;
             margin: 62px 0 0 auto !important;
             color: #e7e9f6;
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1.35;
+        }
+
+        .hero-layout {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(330px, .72fr);
+            align-items: center;
+            gap: 48px;
+        }
+
+        .hero-content {
+            min-width: 0;
+        }
+
+        .hero-content .hero-copy {
+            margin-left: 0 !important;
+        }
+
+        .hero-candidates {
+            position: relative;
+            min-height: 390px;
+            padding: 18px 0 62px;
+        }
+
+        .hero-candidate-card {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            width: min(245px, 72%);
+            min-height: 330px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, .24);
+            border-radius: 18px;
+            background: #f4f5f8;
+            color: #171a2b;
+            box-shadow: 0 24px 45px rgba(0, 0, 0, .34);
+            transform: translateX(-50%) scale(.86);
+            opacity: .46;
+            transition: transform .7s ease, opacity .7s ease, filter .7s ease;
+            filter: saturate(.76);
+        }
+
+        .hero-candidate-card.is-active {
+            z-index: 3;
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+            filter: none;
+        }
+
+        .hero-candidate-card.is-before {
+            z-index: 2;
+            transform: translateX(-86%) translateY(18px) scale(.86) rotate(-5deg);
+        }
+
+        .hero-candidate-card.is-after {
+            z-index: 2;
+            transform: translateX(-14%) translateY(18px) scale(.86) rotate(5deg);
+        }
+
+        .hero-candidate-photo {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #2636ff, #1ee6e1);
+        }
+
+        .hero-candidate-photo img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .hero-candidate-photo .progress-candidate-fallback {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 72px;
+        }
+
+        .hero-candidate-info {
+            padding: 16px 18px 18px;
+        }
+
+        .hero-candidate-number {
+            color: #69718d;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .hero-candidate-name {
+            margin-top: 8px !important;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 23px;
+            line-height: 1;
+        }
+
+        .hero-candidate-link {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            display: grid;
+            width: 30px;
+            height: 30px;
+            place-items: center;
+            border-radius: 50%;
+            background: #171a2b;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .hero-candidate-cta {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 4;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-candidate-cta .hero-cta {
+            margin-top: 0;
         }
 
         .hero-copy strong {
@@ -599,7 +724,16 @@
 
             .hero-title {
                 margin-top: 28px !important;
-                font-size: clamp(3.3rem, 16vw, 5.3rem);
+                font-size: clamp(2.8rem, 13vw, 4.6rem);
+            }
+
+            .hero-layout {
+                display: block;
+            }
+
+            .hero-candidates {
+                min-height: 360px;
+                margin-top: 28px;
             }
 
             .hero-copy {
@@ -630,11 +764,40 @@
     <div class="pilketos-home">
         <div class="pilketos-shell">
             <section class="pilketos-hero">
-                <p class="hero-kicker">PILKETOS resmi {{ $settings['school_name'] }}</p>
-                <h1 class="hero-title">Pilih pemimpin<br><span class="display-serif">masa depan.</span></h1>
-                <p class="hero-copy"><strong>Setiap suara punya arti.</strong> Kenali kandidat, pahami visi mereka, lalu
-                    gunakan hak pilihmu secara <em>jujur, adil, dan transparan.</em></p>
-                <a href="#pemilihan" class="hero-cta">Lihat Kandidat</a>
+                <div class="hero-layout">
+                    <div class="hero-content">
+                        <p class="hero-kicker">PILKETOS resmi {{ $settings['school_name'] }}</p>
+                        <h1 class="hero-title">Pilih pemimpin<br><span class="display-serif">masa depan.</span></h1>
+                        <p class="hero-copy"><strong>Setiap suara punya arti.</strong> Kenali kandidat, pahami visi mereka,
+                            lalu gunakan hak pilihmu secara <em>jujur, adil, dan transparan.</em></p>
+                        <a href="{{ $heroElection ? route('election.show', $heroElection) : '#pemilihan' }}"
+                            class="hero-cta">Lihat kandidat</a>
+                    </div>
+                    @if ($heroCandidates->isNotEmpty())
+                        <div id="hero-kandidat" class="hero-candidates" data-hero-candidates>
+                            @foreach ($heroCandidates as $candidate)
+                                <a href="{{ route('candidate.show', $candidate) }}" class="hero-candidate-card"
+                                    data-hero-candidate aria-label="Lihat profil {{ $candidate->name }}">
+                                    <div class="hero-candidate-photo">
+                                        @if ($candidate->photo_url)
+                                            <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}">
+                                        @else
+                                            <span
+                                                class="progress-candidate-fallback">{{ str($candidate->name)->substr(0, 1)->upper() }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="hero-candidate-info">
+                                        <span class="hero-candidate-number">Nomor {{ $candidate->candidate_number }}</span>
+                                        <h2 class="hero-candidate-name">{{ $candidate->name }}</h2>
+                                    </div>
+                                    <span class="hero-candidate-link" aria-hidden="true">↗</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <span></span>
+                    @endif
+                </div>
             </section>
             <section id="panduan" class="home-section" style="background:#15161c;">
                 <div class="section-heading">
@@ -722,8 +885,9 @@
                         </div>
                     @endif
                 </div>
-                @php($maxCandidateVotes = $resultCandidates->max('votes_count') ?? 0)
+                @php($resultTotalVotes = $resultCandidates->sum('votes_count'))
                 @forelse ($resultCandidates as $candidate)
+                    @php($candidatePercent = $resultTotalVotes > 0 ? round(($candidate->votes_count / $resultTotalVotes) * 100) : 0)
                     <div class="progress-row">
                         @if ($candidate->photo_url)
                             <img src="{{ $candidate->photo_url }}" alt="Foto {{ $candidate->name }}"
@@ -738,12 +902,12 @@
                                 <span class="progress-candidate">{{ $candidate->name }}</span>
                                 <span data-landing-candidate-label="{{ $candidate->id }}"
                                     class="{{ $showVoteCounts ? '' : 'hidden' }}">{{ $candidate->votes_count }}
-                                    suara</span>
+                                    suara ({{ $candidatePercent }}%)</span>
                             </div>
                             <div class="progress-track">
                                 <div data-landing-candidate-bar="{{ $candidate->id }}"
                                     class="progress-value {{ $showVoteCounts ? '' : 'invisible' }}"
-                                    style="width:{{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
+                                    style="width:{{ $candidatePercent }}%">
                                 </div>
                             </div>
                         </div>
@@ -941,19 +1105,20 @@
 
                     <div class="mt-6 space-y-4">
                         @forelse ($resultCandidates as $candidate)
+                            @php($candidatePercent = $resultTotalVotes > 0 ? round(($candidate->votes_count / $resultTotalVotes) * 100) : 0)
                             <div>
                                 <div class="mb-2 flex items-center justify-between gap-4 text-sm">
                                     <span
                                         class="font-semibold text-slate-900 dark:text-white">{{ $candidate->name }}</span>
                                     <span data-landing-candidate-label="{{ $candidate->id }}"
                                         class="text-slate-500 dark:text-slate-400 {{ $showVoteCounts ? '' : 'hidden' }}">{{ $candidate->votes_count }}
-                                        suara
+                                        suara ({{ $candidatePercent }}%)
                                     </span>
                                 </div>
                                 <div class="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                     <div data-landing-candidate-bar="{{ $candidate->id }}"
                                         class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 {{ $showVoteCounts ? '' : 'invisible' }}"
-                                        style="width:{{ $maxCandidateVotes > 0 ? round(($candidate->votes_count / $maxCandidateVotes) * 100) : 0 }}%">
+                                        style="width:{{ $candidatePercent }}%">
                                     </div>
                                 </div>
                             </div>
@@ -1000,6 +1165,26 @@
     </div>
     <script>
         (() => {
+            const candidateCards = [...document.querySelectorAll('[data-hero-candidate]')];
+            let activeCandidate = 0;
+            const updateCandidateCards = () => {
+                candidateCards.forEach((card, index) => {
+                    card.classList.remove('is-active', 'is-before', 'is-after');
+                    if (index === activeCandidate) card.classList.add('is-active');
+                    else if (index === (activeCandidate + candidateCards.length - 1) % candidateCards
+                        .length) card.classList.add('is-before');
+                    else if (index === (activeCandidate + 1) % candidateCards.length) card.classList.add(
+                        'is-after');
+                });
+            };
+            if (candidateCards.length) {
+                updateCandidateCards();
+                window.setInterval(() => {
+                    activeCandidate = (activeCandidate + 1) % candidateCards.length;
+                    updateCandidateCards();
+                }, 3400);
+            }
+
             const dataUrl = @json(route('results.data'));
             const revealAt = @json($resultsPublishAt ? \Illuminate\Support\Carbon::parse($resultsPublishAt)->toIso8601String() : null);
             const countdown = document.querySelector('[data-landing-countdown]');
@@ -1037,8 +1222,6 @@
                     const revealMessage = document.querySelector('[data-landing-reveal-message]');
                     if (revealMessage && data.visible) revealMessage.textContent =
                         'Total suara sudah ditampilkan.';
-                    const maxVotes = Math.max(...data.candidates.map((candidate) => Number(candidate.votes) ||
-                        0), 0);
                     data.candidates.forEach((candidate) => {
                         const label = document.querySelector(
                             `[data-landing-candidate-label="${candidate.id}"]`);
@@ -1047,9 +1230,8 @@
                         label?.classList.toggle('hidden', !data.visible);
                         bar?.classList.toggle('invisible', !data.visible);
                         if (label) label.textContent =
-                            `${candidate.votes} suara`;
-                        if (bar) bar.style.width = maxVotes > 0 ?
-                            `${Math.round((candidate.votes / maxVotes) * 100)}%` : '0%';
+                            `${candidate.votes} suara (${candidate.percent}%)`;
+                        if (bar) bar.style.width = `${candidate.percent}%`;
                     });
                 } catch (error) {}
             };

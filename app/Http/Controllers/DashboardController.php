@@ -272,7 +272,15 @@ class DashboardController extends Controller
 
         $totalVotes = array_sum($chartData);
         $voterCount = User::query()->eligibleVoters()->count();
-        $participation = $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0;
+        $votedCount = $selectedElection
+            ? Vote::query()
+                ->where('election_id', $selectedElection->id)
+                ->whereIn('user_id', User::query()->eligibleVoters()->select('id'))
+                ->distinct('user_id')
+                ->count('user_id')
+            : 0;
+        $notVotedCount = max($voterCount - $votedCount, 0);
+        $participation = $voterCount > 0 ? round(($votedCount / $voterCount) * 100, 2) : 0;
         $resultsPublishAt = $selectedElection?->results_publish_at;
         $showVoteCountsPublic = $selectedElection?->show_vote_counts_public ?? true;
 
@@ -284,6 +292,8 @@ class DashboardController extends Controller
             'candidateRows',
             'totalVotes',
             'voterCount',
+            'votedCount',
+            'notVotedCount',
             'participation',
             'resultsPublishAt',
             'showVoteCountsPublic'
@@ -304,11 +314,21 @@ class DashboardController extends Controller
             : collect();
         $totalVotes = $candidates->sum('votes_count');
         $voterCount = $eligibleVoterIds->count();
+        $votedCount = $selectedElection
+            ? Vote::query()
+                ->where('election_id', $selectedElection->id)
+                ->whereIn('user_id', $eligibleVoterIds)
+                ->distinct('user_id')
+                ->count('user_id')
+            : 0;
+        $notVotedCount = max($voterCount - $votedCount, 0);
 
         return response()->json([
             'total_votes' => $totalVotes,
             'voter_count' => $voterCount,
-            'participation' => $voterCount > 0 ? round(($totalVotes / $voterCount) * 100) : 0,
+            'voted_count' => $votedCount,
+            'not_voted_count' => $notVotedCount,
+            'participation' => $voterCount > 0 ? round(($votedCount / $voterCount) * 100, 2) : 0,
             'candidates' => $candidates->map(fn ($candidate) => [
                 'id' => $candidate->id,
                 'votes' => $candidate->votes_count,
