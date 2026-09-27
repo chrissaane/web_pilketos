@@ -112,7 +112,6 @@ class DashboardController extends Controller
         $selectedElectionVotes = $selectedElection
             ? Vote::query()
                 ->where('election_id', $selectedElection->id)
-                ->whereIn('user_id', $eligibleVoters->pluck('id'))
                 ->count()
             : 0;
         $notVotedCount = max($voterCount - $selectedElectionVotes, 0);
@@ -121,7 +120,7 @@ class DashboardController extends Controller
         $candidates = collect();
         if ($selectedElection) {
             $candidates = $selectedElection->candidates()
-                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoters->pluck('id'))])
+                ->withCount('votes')
                 ->orderBy('candidate_number')
                 ->get();
             $totalVotes = $candidates->sum('votes_count');
@@ -166,7 +165,6 @@ class DashboardController extends Controller
         $votesByClass = Vote::query()
             ->join('users', 'votes.user_id', '=', 'users.id')
             ->where('users.role', 'siswa')
-            ->where('users.is_active', true)
             ->whereNotNull('users.class_group')
             ->whereRaw("TRIM(users.class_group) <> ''")
             ->select('users.class_group', DB::raw('count(votes.id) as voted'))
@@ -260,9 +258,8 @@ class DashboardController extends Controller
         $candidateRows = [];
 
         if ($selectedElection) {
-            $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
             $candidates = $selectedElection->candidates()
-                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
+                ->withCount('votes')
                 ->orderBy('candidate_number')
                 ->get();
             $candidateRows = $candidates;
@@ -275,7 +272,6 @@ class DashboardController extends Controller
         $votedCount = $selectedElection
             ? Vote::query()
                 ->where('election_id', $selectedElection->id)
-                ->whereIn('user_id', User::query()->eligibleVoters()->select('id'))
                 ->distinct('user_id')
                 ->count('user_id')
             : 0;
@@ -305,19 +301,17 @@ class DashboardController extends Controller
         $selectedElection = $request->filled('election_id')
             ? Election::find($request->integer('election_id'))
             : Election::query()->latest('start_time')->first();
-        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
         $candidates = $selectedElection
             ? $selectedElection->candidates()
-                ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
+                ->withCount('votes')
                 ->orderBy('candidate_number')
                 ->get()
             : collect();
         $totalVotes = $candidates->sum('votes_count');
-        $voterCount = $eligibleVoterIds->count();
+        $voterCount = User::query()->eligibleVoters()->count();
         $votedCount = $selectedElection
             ? Vote::query()
                 ->where('election_id', $selectedElection->id)
-                ->whereIn('user_id', $eligibleVoterIds)
                 ->distinct('user_id')
                 ->count('user_id')
             : 0;

@@ -15,8 +15,7 @@ class HomeController extends Controller
     public function index()
     {
         $showFinished = SiteSetting::getValue('show_finished', '1') === '1';
-        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
-        $elections = Election::with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+        $elections = Election::with(['candidates' => fn ($query) => $query->withCount('votes')])
             ->where('is_published', true)
             ->orderBy('start_time', 'desc')
             ->get();
@@ -98,10 +97,9 @@ class HomeController extends Controller
 
     public function results()
     {
-        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
-        $elections = Election::with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+        $elections = Election::with(['candidates' => fn ($query) => $query->withCount('votes')])
             ->where('is_published', true)
-            ->withCount(['votes' => fn ($query) => $query->whereIn('user_id', $eligibleVoterIds)])
+            ->withCount('votes')
             ->orderBy('start_time', 'desc')
             ->get();
         $voterCount = User::query()->eligibleVoters()->count();
@@ -113,14 +111,13 @@ class HomeController extends Controller
 
     public function publicResultsData()
     {
-        $eligibleVoterIds = User::query()->eligibleVoters()->pluck('id');
         $election = Election::query()
             ->where('is_published', true)
-            ->with(['candidates' => fn ($query) => $query->withCount(['votes' => fn ($voteQuery) => $voteQuery->whereIn('user_id', $eligibleVoterIds)])])
+            ->with(['candidates' => fn ($query) => $query->withCount('votes')])
             ->orderBy('start_time', 'desc')
             ->first();
         $totalVotes = $election?->candidates->sum('votes_count') ?? 0;
-        $voterCount = $eligibleVoterIds->count();
+        $voterCount = User::query()->eligibleVoters()->count();
         $visible = $election?->publicResultsVisible() ?? false;
 
         return response()->json([

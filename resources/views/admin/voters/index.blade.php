@@ -4,10 +4,19 @@
     <div class="admin-resource-page admin-voters-page space-y-6">
         <!-- Header Section -->
         <div class="flex min-w-0 flex-col gap-5">
-            <div>
-                <h2 class="text-2xl font-black text-slate-900 dark:text-white">Data Pemilih</h2>
-                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Kelola data akun pemilih dan token yang aktif
-                    mengikuti periode pemilihan yang sedang berlangsung.</p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 dark:text-white">Data Pemilih</h2>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Kelola data akun pemilih dan token yang aktif
+                        mengikuti periode pemilihan yang sedang berlangsung.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('admin.voters.trash') }}"
+                        class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-900/30 dark:bg-rose-950/40 dark:text-rose-300">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Sampah Terhapus</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Action Buttons -->
@@ -321,35 +330,52 @@
             const searchInput = document.getElementById('voterSearch');
             const tableBody = document.getElementById('votersTableBody');
 
-            document.querySelectorAll('[data-password-form]').forEach((form) => {
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault();
+            function bindVoterTableActions(container, bindConfirmations = false) {
+                container.querySelectorAll('[data-password-form]').forEach((form) => {
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault();
 
-                    if (!window.Swal) {
-                        form.submit();
-                        return;
-                    }
-
-                    Swal.fire({
-                        title: 'Ubah Password Pemilih',
-                        text: `Masukkan password baru untuk ${form.dataset.accountName}. Kosongkan untuk membuat password otomatis.`,
-                        input: 'password',
-                        inputPlaceholder: 'Password baru (opsional)',
-                        inputAttributes: {
-                            autocomplete: 'new-password'
-                        },
-                        showCancelButton: true,
-                        confirmButtonText: 'Simpan Password',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            form.querySelector('input[name="password"]').value = result
-                                .value || '';
+                        if (!window.Swal) {
                             form.submit();
+                            return;
                         }
+
+                        Swal.fire({
+                            title: 'Ubah Password Pemilih',
+                            text: `Masukkan password baru untuk ${form.dataset.accountName}. Kosongkan untuk membuat password otomatis.`,
+                            input: 'password',
+                            inputPlaceholder: 'Password baru (opsional)',
+                            inputAttributes: {
+                                autocomplete: 'new-password'
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: 'Simpan Password',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                form.querySelector('input[name="password"]').value = result
+                                    .value || '';
+                                form.submit();
+                            }
+                        });
                     });
                 });
-            });
+
+                if (bindConfirmations) {
+                    container.querySelectorAll('form[data-confirm]').forEach((form) => {
+                        form.addEventListener('submit', function(event) {
+                            event.preventDefault();
+                            confirmAction(form.dataset.confirm).then((confirmed) => {
+                                if (confirmed) form.submit();
+                            });
+                        });
+                    });
+                }
+            }
+
+            if (tableBody) {
+                bindVoterTableActions(tableBody);
+            }
 
             function applyVoterSearch() {
                 if (!searchInput || !tableBody) return;
@@ -464,6 +490,7 @@
                                                 'votersTableBody');
                                             if (container) {
                                                 container.innerHTML = html;
+                                                bindVoterTableActions(container, true);
                                             }
                                         })
                                         .catch(() => {

@@ -176,14 +176,20 @@
         @endphp
         <script>
             const donutCtx = document.getElementById('donutChart');
+            const chartLabels = @json($chartLabels);
+            const chartData = @json($chartData);
+            const hasChartVotes = chartData.some((votes) => Number(votes) > 0);
+
             if (donutCtx) {
                 new Chart(donutCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: @json($chartLabels),
+                        labels: hasChartVotes ? chartLabels : ['Belum ada suara'],
                         datasets: [{
-                            data: @json($chartData),
-                            backgroundColor: ['#1e40af', '#60a5fa', '#7c3aed', '#34d399', '#f97316'],
+                            data: hasChartVotes ? chartData : [1],
+                            backgroundColor: hasChartVotes ? ['#1e40af', '#60a5fa', '#7c3aed', '#34d399',
+                                '#f97316'
+                            ] : ['#64748b'],
                             hoverOffset: 8,
                         }]
                     },

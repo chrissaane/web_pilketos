@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->enum('role', ['admin', 'guru', 'siswa'])->default('siswa');
+            $table->enum('role', ['admin', 'guru', 'karyawan', 'siswa', 'alumni'])->default('siswa');
             $table->string('identity_number')->unique()->comment('NIS untuk Siswa, NIP untuk Guru, Username untuk Admin');
             $table->string('name');
             $table->string('email')->unique()->nullable();

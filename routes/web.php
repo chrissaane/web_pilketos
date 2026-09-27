@@ -61,6 +61,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('voters', [VoterController::class, 'index'])->name('voters.index');
         Route::delete('voters/{identity}', [VoterController::class, 'destroy'])->name('voters.destroy');
         Route::delete('voters/user/{user}', [VoterController::class, 'destroyById'])->name('voters.destroy_by_id');
+        Route::post('voters/user/{id}/restore', [VoterController::class, 'restore'])->name('voters.restore');
+        Route::get('voters/trash', [VoterController::class, 'trash'])->name('voters.trash');
         Route::put('voters/{identity}/password', [VoterController::class, 'updatePassword'])->name('voters.password.update');
         Route::post('voters/{identity}/regenerate-password', [VoterController::class, 'regeneratePassword'])->name('voters.regenerate_password');
         Route::post('voters/regenerate-passwords', [VoterController::class, 'regeneratePasswordsForFilter'])->name('voters.regenerate_passwords');

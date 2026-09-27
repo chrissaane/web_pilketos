@@ -104,7 +104,7 @@ test('admin can delete a voter by identity number', function () {
     $response->assertRedirect(route('admin.voters.index'))
         ->assertSessionHas('success');
 
-    $this->assertDatabaseMissing('users', ['id' => $voter->id]);
+    $this->assertSoftDeleted('users', ['id' => $voter->id]);
 });
 
 test('admin can open voter index even when voting tokens table is missing', function () {
@@ -153,6 +153,30 @@ test('admin sees only active voter records in the default semua filter', functio
     $response->assertOk()
         ->assertSeeText('Siswa Aktif')
         ->assertDontSeeText('Siswa Nonaktif');
+});
+
+test('voter table partial includes edit and delete actions', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'identity_number' => 'ADMIN-PARTIAL',
+        'is_active' => true,
+    ]);
+
+    $voter = User::factory()->create([
+        'role' => 'siswa',
+        'identity_number' => '20261234',
+        'name' => 'Pemilih Partial',
+        'class_group' => '12',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('admin.voters.index', ['partial' => 1]));
+
+    $response->assertOk()
+        ->assertSee('data-password-form', false)
+        ->assertSee(route('admin.voters.destroy_by_id', $voter->id), false)
+        ->assertSeeText('Edit')
+        ->assertSeeText('Hapus');
 });
 
 test('admin does not see students without a class in voter data', function () {

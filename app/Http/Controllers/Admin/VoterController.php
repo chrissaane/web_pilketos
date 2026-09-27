@@ -392,19 +392,43 @@ class VoterController extends Controller
 
         $this->deactivateVoter($voter);
 
-        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih dinonaktifkan, bukan dihapus permanen agar sinkronisasi SiPintu dapat memperbarui status dengan aman.');
+        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih berhasil dihapus (soft delete). Data dapat dipulihkan jika diperlukan.');
     }
 
     public function destroyById(User $user)
     {
         $this->deactivateVoter($user);
 
-        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih dinonaktifkan, bukan dihapus permanen agar sinkronisasi SiPintu dapat memperbarui status dengan aman.');
+        return redirect()->route('admin.voters.index')->with('success', 'Data pemilih berhasil dihapus (soft delete). Data dapat dipulihkan jika diperlukan.');
     }
 
     private function deactivateVoter(User $voter): void
     {
-        $voter->update(['is_active' => false]);
+        // Soft delete: set deleted_at timestamp, data tidak hilang permanen dari database
+        $voter->delete();
+    }
+
+    /**
+     * Pulihkan (restore) user yang sudah di-soft delete.
+     */
+    public function restore(int $id)
+    {
+        $voter = User::onlyTrashed()->findOrFail($id);
+        $voter->restore();
+
+        return redirect()->route('admin.voters.trash')->with('success', 'Data pemilih '.$voter->name.' berhasil dipulihkan.');
+    }
+
+    /**
+     * Tampilkan daftar user yang sudah di-soft delete (sampah).
+     */
+    public function trash(Request $request)
+    {
+        $trashedUsers = User::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get();
+
+        return view('admin.voters.trash', compact('trashedUsers'));
     }
 
     public function updatePassword(Request $request, string $identity)
