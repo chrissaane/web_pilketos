@@ -28,7 +28,6 @@ class AdminSettingsController extends Controller
             'footer_text' => SiteSetting::getValue('footer_text', 'PILKETOS'),
             'copyright_text' => SiteSetting::getValue('copyright_text', 'All rights reserved.'),
             'footer_year' => SiteSetting::getValue('footer_year', date('Y')),
-            'election_active' => SiteSetting::getValue('election_active', '1'),
             'show_statistics' => SiteSetting::getValue('show_statistics', '1'),
             'show_finished' => SiteSetting::getValue('show_finished', '1'),
             'confirm_delete' => SiteSetting::getValue('confirm_delete', '1'),
@@ -57,7 +56,6 @@ class AdminSettingsController extends Controller
             'footer_text' => ['nullable', 'string', 'max:255'],
             'copyright_text' => ['nullable', 'string', 'max:255'],
             'footer_year' => ['nullable', 'integer'],
-            'election_active' => ['nullable', 'boolean'],
             'show_statistics' => ['nullable', 'boolean'],
             'show_finished' => ['nullable', 'boolean'],
             'confirm_delete' => ['nullable', 'boolean'],
@@ -65,8 +63,10 @@ class AdminSettingsController extends Controller
             'logout_all' => ['nullable', 'boolean'],
         ]);
 
-        foreach (['election_active', 'show_statistics', 'show_finished', 'confirm_delete'] as $booleanSetting) {
-            $data[$booleanSetting] = $request->boolean($booleanSetting);
+        foreach (['show_statistics', 'show_finished', 'confirm_delete'] as $booleanSetting) {
+            if (array_key_exists($booleanSetting, $data)) {
+                $data[$booleanSetting] = $request->boolean($booleanSetting);
+            }
         }
 
         foreach ([

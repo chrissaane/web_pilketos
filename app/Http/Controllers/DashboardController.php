@@ -6,7 +6,6 @@ use App\Http\Requests\VoteRequest;
 use App\Models\ActivityLog;
 use App\Models\Candidate;
 use App\Models\Election;
-use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\Vote;
 use App\Models\VotingToken;
@@ -343,14 +342,6 @@ class DashboardController extends Controller
             }
 
             return back()->with('error', $msg);
-        }
-
-        if (SiteSetting::getValue('election_active', '1') !== '1') {
-            if ($expectsJson) {
-                return response()->json(['success' => false, 'message' => 'Sistem pemilihan sedang dinonaktifkan oleh admin.'], 422);
-            }
-
-            return back()->with('error', 'Sistem pemilihan sedang dinonaktifkan oleh admin.');
         }
 
         $election = Election::find($request->input('election_id'));

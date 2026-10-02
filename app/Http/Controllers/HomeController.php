@@ -46,7 +46,6 @@ class HomeController extends Controller
             'footer_text' => SiteSetting::getValue('footer_text', 'PILKETOS'),
             'copyright_text' => SiteSetting::getValue('copyright_text', 'All rights reserved.'),
             'footer_year' => SiteSetting::getValue('footer_year', date('Y')),
-            'election_active' => SiteSetting::getValue('election_active', '1'),
             'show_statistics' => SiteSetting::getValue('show_statistics', '1'),
             'show_finished' => SiteSetting::getValue('show_finished', '1'),
         ];

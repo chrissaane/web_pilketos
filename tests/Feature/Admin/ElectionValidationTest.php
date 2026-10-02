@@ -101,3 +101,4 @@ test('admin cannot use candidate number four or duplicate a number in one electi
     $duplicate = $this->from(route('admin.candidates.create'))->post(route('admin.candidates.store'), $payload + ['candidate_number' => 1]);
     $duplicate->assertSessionHasErrors('candidate_number');
 });
+

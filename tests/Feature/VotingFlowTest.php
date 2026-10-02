@@ -2,6 +2,7 @@
 
 use App\Models\Candidate;
 use App\Models\Election;
+use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\VotingToken;
 use App\Services\SiPintuGatewayService;
@@ -39,7 +40,9 @@ test('voting token casts foreign keys to integers for strict ownership checks', 
         ->and($token->election_id)->toBe(7);
 });
 
-test('voter can submit the token assigned to the current election', function () {
+test('active election schedule allows voting even when the legacy global flag is off', function () {
+    SiteSetting::setValue('election_active', '0');
+
     $user = User::factory()->create([
         'role' => 'siswa',
         'class_group' => 'X',
