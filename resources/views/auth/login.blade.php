@@ -104,7 +104,7 @@
             width: 100%;
             border: 1px solid rgba(16, 185, 129, .4);
             border-radius: 0;
-            background: #f0fdf4;
+            background: transparent;
             padding: 13px 15px;
             color: #065f46;
             font-weight: 700;
@@ -117,7 +117,7 @@
 
         .login-editorial .login-sipintu-btn:hover {
             border-color: #059669;
-            background: #dcfce7;
+            background: rgba(16, 185, 129, .08);
             color: #064e3b;
         }
 
@@ -206,13 +206,13 @@
 
         html.dark .login-editorial .login-sipintu-btn {
             border-color: rgba(52, 211, 153, .35);
-            background: rgba(6, 78, 59, .25);
+            background: transparent;
             color: #6ee7b7;
         }
 
         html.dark .login-editorial .login-sipintu-btn:hover {
             border-color: #34d399;
-            background: rgba(6, 78, 59, .45);
+            background: rgba(52, 211, 153, .08);
             color: #a7f3d0;
         }
 
@@ -308,6 +308,16 @@
                     Login
                 </button>
             </form>
+
+            <div class="login-divider">
+                <span class="login-divider-text">atau</span>
+            </div>
+
+            <a href="{{ route('sipintu.oauth.redirect') }}" class="login-sipintu-btn">
+                <img src="{{ app(\App\Services\SiPintuGatewayService::class)->getBaseUrl() }}/icons/icon-192x192.png"
+                    alt="" aria-hidden="true" class="h-7 w-7 shrink-0 object-contain">
+                <span>Masuk dengan SiPintu</span>
+            </a>
         </div>
     </div>
 @endsection

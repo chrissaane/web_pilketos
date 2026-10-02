@@ -40,7 +40,7 @@ return [
         'base_url' => env('SIPINTU_BASE_URL', 'https://sipintu.smkn1bangsri.sch.id'),
         'redirect_uri' => env('SIPINTU_REDIRECT_URI', 'https://pilketos.smkn1bangsri.sch.id/oauth/callback'),
         'client_id' => env('SIPINTU_CLIENT_ID', 'app_afcxatdmjdy6'),
-        'client_secret' => env('SIPINTU_CLIENT_SECRET', 'sec_RdzmT7gDJ0JqkToVgqtMNSVwLa5RoSeG'),
+        'client_secret' => env('SIPINTU_CLIENT_SECRET'),
         'timeout' => (int) env('SIPINTU_TIMEOUT', 30),
     ],
 

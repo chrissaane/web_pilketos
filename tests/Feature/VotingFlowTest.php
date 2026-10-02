@@ -161,6 +161,19 @@ test('guest can begin sipintu oauth flow', function () {
     $this->assertNotNull(session('sipintu_oauth_state'));
 });
 
+test('login page offers sipintu sign in and a return link to sipintu', function () {
+    config()->set('services.sipintu.base_url', 'https://sipintu.example.test');
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('Masuk dengan SiPintu')
+        ->assertSee(route('sipintu.oauth.redirect'))
+        ->assertSee('/icons/icon-192x192.png')
+        ->assertSee('Logo SiPintu')
+        ->assertSee('Kembali ke SiPintu')
+        ->assertSee('https://sipintu.example.test');
+});
+
 test('generated local password is unique and secure per voter', function () {
     $password = User::generateLocalPassword('20260099', 'Ayu SiPintu');
 
