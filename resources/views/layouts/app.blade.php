@@ -858,14 +858,12 @@ $watch('theme', value => {
                 </nav>
 
                 <div class="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
-                    @guest
-                        <a href="{{ app(\App\Services\SiPintuGatewayService::class)->getBaseUrl() }}"
-                            class="site-control flex h-10 w-10 shrink-0 items-center justify-center border border-emerald-300 bg-white/80 p-1.5 shadow-sm transition hover:-translate-y-0.5 dark:border-emerald-800 dark:bg-slate-800"
-                            aria-label="Kembali ke SiPintu" title="Kembali ke SiPintu">
-                            <img src="{{ app(\App\Services\SiPintuGatewayService::class)->getBaseUrl() }}/storage/settings/QMtxBgGUp7Vhg5ONz2nv4UaNONQO26jngCO71pOK.png?v=1790147263"
-                                alt="Logo SiPintu" class="h-full w-full object-contain">
-                        </a>
-                    @endguest
+                    <a href="{{ app(\App\Services\SiPintuGatewayService::class)->getBaseUrl() }}"
+                        class="site-control flex h-10 w-10 shrink-0 items-center justify-center border border-emerald-300 p-1.5 shadow-sm transition hover:-translate-y-0.5 dark:border-emerald-800"
+                        aria-label="Kembali ke SiPintu" title="Kembali ke SiPintu">
+                        <img src="{{ app(\App\Services\SiPintuGatewayService::class)->getBaseUrl() }}/icons/icon-192x192.png"
+                            alt="Logo SiPintu" class="h-full w-full object-contain">
+                    </a>
                     <button type="button" x-on:click="theme = theme === 'dark' ? 'light' : 'dark'"
                         class="site-control flex items-center justify-center rounded-full border border-slate-300 bg-white/80 p-2.5 text-slate-700 shadow-sm transition hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         aria-label="Ganti tema" title="Ganti tema">

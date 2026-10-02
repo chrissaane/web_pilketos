@@ -161,7 +161,7 @@ test('guest can begin sipintu oauth flow', function () {
     $this->assertNotNull(session('sipintu_oauth_state'));
 });
 
-test('login page offers sipintu sign in and a return link to sipintu', function () {
+test('sipintu return link stays visible beside the theme toggle for guests and signed-in users', function () {
     config()->set('services.sipintu.base_url', 'https://sipintu.example.test');
 
     $this->get(route('login'))
@@ -172,6 +172,13 @@ test('login page offers sipintu sign in and a return link to sipintu', function 
         ->assertSee('Logo SiPintu')
         ->assertSee('Kembali ke SiPintu')
         ->assertSee('https://sipintu.example.test');
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('about'))
+        ->assertOk()
+        ->assertSee('Kembali ke SiPintu')
+        ->assertSee('https://sipintu.example.test')
+        ->assertSee('/icons/icon-192x192.png');
 });
 
 test('generated local password is unique and secure per voter', function () {
